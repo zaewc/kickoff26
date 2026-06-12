@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sessionCookie, signSession } from "@/lib/auth";
 import { SessionUser } from "@/lib/types";
-import { upsertUser } from "@/lib/users";
+import { findUserBySession, upsertUser } from "@/lib/users";
+import { awardReferral } from "@/lib/referral";
 
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
@@ -78,7 +79,20 @@ export async function GET(request: NextRequest) {
       email: profile.email,
       avatar: profile.picture,
     };
-    await upsertUser(user);
+    const existing = await findUserBySession(user);
+    const dbUser = await upsertUser(user);
+    user.refCode = dbUser.id;
+
+    if (!existing) {
+      const ref = request.cookies.get("kickoff_ref")?.value;
+      if (ref) {
+        try {
+          await awardReferral(dbUser.id, decodeURIComponent(ref));
+        } catch (error) {
+          console.error("Referral award failed:", error);
+        }
+      }
+    }
 
     const response = NextResponse.redirect(new URL("/", request.url));
     response.cookies.set(
@@ -88,6 +102,7 @@ export async function GET(request: NextRequest) {
     );
     response.cookies.delete("google_oauth_state");
     response.cookies.delete("google_oauth_verifier");
+    response.cookies.delete("kickoff_ref");
     return response;
   } catch (error) {
     console.error("Google OAuth callback failed:", error);

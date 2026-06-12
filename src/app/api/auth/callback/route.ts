@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sessionCookie, signSession } from "@/lib/auth";
 import { SessionUser } from "@/lib/types";
-import { upsertUser } from "@/lib/users";
+import { findUserBySession, upsertUser } from "@/lib/users";
+import { awardReferral } from "@/lib/referral";
 
 const TOKEN_URL = "https://oauth.authorization.datagsm.kr/v1/oauth/token";
 const USERINFO_URL = "https://oauth.resource.datagsm.kr/userinfo";

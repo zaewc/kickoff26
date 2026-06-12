@@ -17,6 +17,7 @@ model User {
   classNumber   Int?
   studentNumber Int?
   pointBalance  Int                  @default(1000)
+  referredBy    String?
   lastLoginAt   DateTime     @default(now())
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
