@@ -211,28 +211,47 @@ function WagerControl({
   value: number;
   onChange: (value: number) => void;
 }) {
+  const [draft, setDraft] = useState(String(value));
+
+  const commitWager = () => {
+    const parsed = Number(draft);
+    const normalized = Number.isFinite(parsed)
+      ? Math.min(500, Math.max(10, Math.round(parsed / 10) * 10))
+      : value;
+    setDraft(String(normalized));
+    onChange(normalized);
+  };
+
   return (
-    <div className="flex items-center gap-1 rounded-xl border border-[#dce2dc] bg-white p-1">
-      <button
-        aria-label="베팅 포인트 내리기"
-        className="grid size-7 place-items-center rounded-lg text-[#6e7b74] hover:bg-[#f3f5f1]"
-        onClick={() => onChange(Math.max(10, value - 10))}
-        type="button"
-      >
-        <Minus size={13} />
-      </button>
-      <span className="display min-w-14 text-center text-sm font-bold tabular-nums">
-        {value}P
-      </span>
-      <button
-        aria-label="베팅 포인트 올리기"
-        className="grid size-7 place-items-center rounded-lg bg-[#e9f0e4] text-[#174a37] hover:bg-[#dce8d6]"
-        onClick={() => onChange(Math.min(500, value + 10))}
-        type="button"
-      >
-        <Plus size={13} />
-      </button>
-    </div>
+    <label className="flex min-w-0 items-center gap-1 rounded-xl border border-[#dce2dc] bg-white px-3 py-1 focus-within:border-[#5b8b76] focus-within:ring-2 focus-within:ring-[#dceae2]">
+      <span className="sr-only">베팅 포인트</span>
+      <input
+        aria-label="베팅 포인트"
+        className="display w-16 min-w-0 bg-transparent py-1.5 text-right text-sm font-bold tabular-nums outline-none"
+        inputMode="numeric"
+        max={500}
+        min={10}
+        onBlur={commitWager}
+        onChange={(event) => {
+          const next = event.target.value.replace(/\D/g, "").slice(0, 3);
+          setDraft(next);
+          const parsed = Number(next);
+          if (parsed >= 10 && parsed <= 500 && parsed % 10 === 0) {
+            onChange(parsed);
+          }
+        }}
+        onFocus={(event) => event.currentTarget.select()}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") event.currentTarget.blur();
+        }}
+        onWheel={(event) => event.currentTarget.blur()}
+        pattern="[0-9]*"
+        step={10}
+        type="text"
+        value={draft}
+      />
+      <span className="text-xs font-bold text-[#6f7c75]">P</span>
+    </label>
   );
 }
 
