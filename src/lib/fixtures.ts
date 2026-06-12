@@ -152,6 +152,13 @@ export async function syncFixtures() {
           awayName: match.away.name,
           awayCode: match.away.code,
           dataMode: existing?.dataMode === "football-data" ? "football-data" : "open",
+          ...(match.status === "FINISHED"
+            ? {
+                status: match.status,
+                homeScore: match.homeScore,
+                awayScore: match.awayScore,
+              }
+            : {}),
         },
       });
     }

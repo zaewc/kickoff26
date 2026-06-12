@@ -140,7 +140,9 @@ export async function fetchOpenFootballSchedule(): Promise<Match[]> {
       stage: isGroupStage
         ? "그룹 스테이지"
         : (stageNames[item.round] ?? item.round),
-      group: item.group?.replace("Group", "조") ?? (stageNames[item.round] ?? item.round),
+      group:
+        item.group?.replace(/^Group ([A-L])$/, "$1조") ??
+        (stageNames[item.round] ?? item.round),
       kickoff: parseOpenFootballDate(item.date, item.time).toISOString(),
       venue: item.ground,
       status: score ? "FINISHED" : "UPCOMING",
