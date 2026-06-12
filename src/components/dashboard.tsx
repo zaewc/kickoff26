@@ -54,7 +54,17 @@ const formatKickoff = (value: string) =>
 
 const numberFormat = new Intl.NumberFormat("ko-KR");
 
-function TeamMark({ code, size = "md" }: { code: string; size?: "sm" | "md" }) {
+function TeamMark({
+  code,
+  logo,
+  name,
+  size = "md",
+}: {
+  code: string;
+  logo?: string;
+  name?: string;
+  size?: "sm" | "md";
+}) {
   const palettes: Record<string, string> = {
     MEX: "from-[#0b704c] to-[#06412f] text-white",
     RSA: "from-[#ffce24] to-[#e7a900] text-[#163f2c]",
@@ -68,6 +78,18 @@ function TeamMark({ code, size = "md" }: { code: string; size?: "sm" | "md" }) {
     SUI: "from-[#e82222] to-[#ae0e0e] text-white",
   };
   const dimension = size === "sm" ? "size-9 text-[10px]" : "size-14 text-xs";
+
+  if (logo) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={logo}
+        alt={name ? `${name} 국기` : code}
+        loading="lazy"
+        className={`${dimension} shrink-0 rounded-full border-2 border-white bg-white object-cover shadow-[0_5px_14px_rgba(20,38,32,0.16)]`}
+      />
+    );
+  }
 
   return (
     <span
@@ -186,7 +208,7 @@ function MatchCard({
       <div className="px-5 pb-5 pt-4">
         <div className="mb-4 flex items-center justify-center gap-4">
           <div className="flex min-w-0 flex-1 flex-col items-center gap-2 text-center">
-            <TeamMark code={match.home.code} />
+            <TeamMark code={match.home.code} logo={match.home.logo} name={match.home.name} />
             <span className="line-clamp-1 text-sm font-bold">{match.home.name}</span>
           </div>
 
@@ -203,7 +225,7 @@ function MatchCard({
           )}
 
           <div className="flex min-w-0 flex-1 flex-col items-center gap-2 text-center">
-            <TeamMark code={match.away.code} />
+            <TeamMark code={match.away.code} logo={match.away.logo} name={match.away.name} />
             <span className="line-clamp-1 text-sm font-bold">{match.away.name}</span>
           </div>
         </div>
@@ -334,7 +356,7 @@ function FeaturedMatch({
 
         <div className="my-7 grid grid-cols-[1fr_auto_1fr] items-center gap-3 md:my-8 md:gap-8">
           <div className="flex flex-col items-center gap-3 text-center md:flex-row md:text-left">
-            <TeamMark code={match.home.code} />
+            <TeamMark code={match.home.code} logo={match.home.logo} name={match.home.name} />
             <div>
               <p className="text-xs text-white/45">{match.home.code}</p>
               <h2 className="display text-lg font-bold md:text-2xl">
@@ -361,7 +383,7 @@ function FeaturedMatch({
                 {match.away.name}
               </h2>
             </div>
-            <TeamMark code={match.away.code} />
+            <TeamMark code={match.away.code} logo={match.away.logo} name={match.away.name} />
           </div>
         </div>
 

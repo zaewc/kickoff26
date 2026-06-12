@@ -164,7 +164,7 @@ export function FloatingChat({ user }: FloatingChatProps) {
                 <MessageCircle size={18} strokeWidth={2.5} />
               </span>
               <div>
-                <h2 className="display text-sm font-bold">월드컵 라운지</h2>
+                <h2 className="display text-sm font-bold">CHATTING</h2>
               </div>
             </div>
             <button
