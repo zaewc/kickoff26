@@ -34,7 +34,8 @@ DataGSM 액세스 토큰은 사용자 정보를 조회한 뒤 폐기하며 브�
 | `DATAGSM_CLIENT_ID` | DataGSM OAuth Client ID |
 | `DATAGSM_REDIRECT_URI` | 사전 등록한 OAuth 콜백 URI |
 | `SESSION_SECRET` | 세션 쿠키 서명용 32자 이상 임의 문자열 |
-| `DATABASE_URL` | SQLite 경로, 기본값 `file:./dev.db` |
+| `DATABASE_URL` | 로컬 SQLite 경로 또는 Turso `libsql://` URL |
+| `TURSO_AUTH_TOKEN` | Turso 원격 DB 토큰, Vercel 배포 시 필요 |
 | `FOOTBALL_DATA_API_KEY` | football-data.org 무료 결과 갱신 키, 선택 |
 | `CRON_SECRET` | 경기 데이터 동기화 API 인증값 |
 
@@ -88,6 +89,32 @@ curl -X PUT http://localhost:3000/api/admin/fixtures/20260001/result \
 npm run db:migrate  # 미적용 SQL 마이그레이션 적용
 npm run db:studio   # DB 확인
 npm run db:generate # Prisma Client 재생성
+```
+
+## Vercel 배포
+
+Vercel Functions의 로컬 파일은 영구 저장소가 아니므로
+`DATABASE_URL=file:...` 설정을 프로덕션에서 사용하면 안 됩니다. 무료 Turso
+DB를 생성하고 Vercel 프로젝트의 Production 환경 변수에 다음 값을
+설정합니다.
+
+```bash
+DATABASE_URL=libsql://your-database.turso.io
+TURSO_AUTH_TOKEN=your-token
+```
+
+환경 변수를 로컬 `.env`에 설정한 뒤 원격 DB 마이그레이션을 한 번
+실행합니다.
+
+```bash
+npm run db:deploy
+```
+
+DataGSM 클라이언트에는 실제 Vercel 도메인의 콜백 주소를 등록하고
+`DATAGSM_REDIRECT_URI`도 같은 값으로 설정해야 합니다.
+
+```text
+https://your-project.vercel.app/api/auth/callback
 ```
 
 ## Getting Started

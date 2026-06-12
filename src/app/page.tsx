@@ -1,5 +1,7 @@
 import { Dashboard } from "@/components/dashboard";
+import { DatabaseSetup } from "@/components/database-setup";
 import { getSession } from "@/lib/auth";
+import { isPersistentDatabaseConfigured } from "@/lib/db";
 import {
   ensureSeedFixtures,
   getFixtureDataMode,
@@ -14,7 +16,17 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  await ensureSeedFixtures();
+  if (!isPersistentDatabaseConfigured) {
+    return <DatabaseSetup />;
+  }
+
+  try {
+    await ensureSeedFixtures();
+  } catch (error) {
+    console.error("Database initialization failed:", error);
+    return <DatabaseSetup />;
+  }
+
   const session = await getSession();
   const [matches, dataMode, predictions, rankings, userStats] =
     await Promise.all([
