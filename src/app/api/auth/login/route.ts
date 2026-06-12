@@ -24,7 +24,6 @@ export async function GET(request: NextRequest) {
   url.searchParams.set("redirect_uri", redirectUri);
   url.searchParams.set("response_type", "code");
   url.searchParams.set("state", state);
-  url.searchParams.set("scope", "self:read");
   url.searchParams.set("code_challenge", challenge);
   url.searchParams.set("code_challenge_method", "S256");
 

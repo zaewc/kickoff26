@@ -4,6 +4,7 @@ import {
   fetchOpenFootballSchedule,
 } from "@/lib/free-football";
 import { demoMatches } from "@/lib/football";
+import { syncMatchClock } from "@/lib/match-clock";
 import { settleBettingPool } from "@/lib/scoring";
 import { FixtureDataMode, Match } from "@/lib/types";
 
@@ -295,7 +296,7 @@ export async function getStoredMatches(): Promise<Match[]> {
       const home = total ? Math.round((counts.home / total) * 100) : 0;
       const draw = total ? Math.round((counts.draw / total) * 100) : 0;
 
-      return {
+      return syncMatchClock({
         id: fixture.externalId,
         stage: fixture.stage,
         group: fixture.groupName,
@@ -324,7 +325,7 @@ export async function getStoredMatches(): Promise<Match[]> {
           predictions: total,
           poolPoints,
         },
-      };
+      });
     })
     .sort((a, b) => {
       const statusWeight = { LIVE: 0, UPCOMING: 1, FINISHED: 2 };

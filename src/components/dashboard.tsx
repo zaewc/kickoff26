@@ -29,6 +29,8 @@ import {
   UserStats,
   FixtureDataMode,
 } from "@/lib/types";
+import { FloatingChat } from "@/components/floating-chat";
+import { syncMatchClock } from "@/lib/match-clock";
 
 type DashboardProps = {
   initialMatches: Match[];
@@ -463,6 +465,17 @@ export function Dashboard({
     return () => window.clearTimeout(timer);
   }, [toast]);
 
+  useEffect(() => {
+    const syncClock = () => {
+      const now = new Date();
+      setMatches((current) =>
+        current.map((match) => syncMatchClock(match, now)),
+      );
+    };
+    const timer = window.setInterval(syncClock, 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   const liveMatch = matches.find((match) => match.status === "LIVE");
   const defaultPrediction = (id: number): Prediction =>
     predictions[id] ?? { home: 0, away: 0, wager: 100, updatedAt: "" };
@@ -657,25 +670,6 @@ export function Dashboard({
             </div>
           </div>
         </section>
-
-        {dataMode === "demo" && (
-          <div className="mb-5 flex items-start gap-2.5 rounded-2xl border border-[#f0dba2] bg-[#fff8df] px-4 py-3 text-xs leading-5 text-[#785c16]">
-            <Sparkles className="mt-0.5 shrink-0" size={15} />
-            <p>
-              현재 데모 경기 데이터를 표시하고 있습니다. 무료 openfootball
-              일정 동기화를 실행하면 실제 104경기 일정으로 전환됩니다.
-            </p>
-          </div>
-        )}
-        {dataMode === "open" && (
-          <div className="mb-5 flex items-start gap-2.5 rounded-2xl border border-[#cfe2d2] bg-[#eef8ed] px-4 py-3 text-xs leading-5 text-[#356047]">
-            <Sparkles className="mt-0.5 shrink-0" size={15} />
-            <p>
-              openfootball의 무료 2026 공식 일정 데이터를 사용 중입니다.
-              스코어는 football-data.org 또는 관리자 확정 결과로 갱신됩니다.
-            </p>
-          </div>
-        )}
 
         {liveMatch && (
           <FeaturedMatch
@@ -887,6 +881,8 @@ export function Dashboard({
           </div>
         </div>
       </footer>
+
+      <FloatingChat user={user} />
 
       {toast && (
         <div className="fixed bottom-5 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full bg-[#123f30] px-5 py-3 text-xs font-bold text-white shadow-2xl">
