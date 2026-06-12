@@ -66,6 +66,32 @@ export type UserStats = {
   balance: number;
 };
 
+export type UserPredictionEntry = {
+  id: string;
+  matchId: number;
+  stage: string;
+  group: string;
+  kickoff: string;
+  venue: string;
+  status: MatchStatus;
+  home: Team;
+  away: Team;
+  prediction: {
+    home: number;
+    away: number;
+    wager: number;
+  };
+  result: {
+    home: number | null;
+    away: number | null;
+  };
+  outcomeCorrect: boolean;
+  exactScore: boolean;
+  payoutPoints: number;
+  scoredAt?: string;
+  updatedAt: string;
+};
+
 export type ChatMessage = {
   id: string;
   content: string;

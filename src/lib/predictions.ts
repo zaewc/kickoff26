@@ -1,5 +1,12 @@
 import { db } from "@/lib/db";
-import { Prediction, RankingEntry, SessionUser, UserStats } from "@/lib/types";
+import {
+  Prediction,
+  RankingEntry,
+  SessionUser,
+  UserPredictionEntry,
+  UserStats,
+} from "@/lib/types";
+import { getTimedMatchState } from "@/lib/match-clock";
 import { upsertUser } from "@/lib/users";
 
 export async function getPredictionsForUser(
@@ -60,6 +67,64 @@ export async function getUserStats(
     points: predictions.reduce((sum, prediction) => sum + prediction.points, 0),
     balance: user.pointBalance,
   };
+}
+
+export async function getPredictionListForUser(
+  session: SessionUser | null,
+): Promise<UserPredictionEntry[]> {
+  if (!session) return [];
+
+  const user = await upsertUser(session);
+  const predictions = await db.prediction.findMany({
+    where: { userId: user.id },
+    include: { fixture: true },
+    orderBy: { fixture: { kickoff: "asc" } },
+  });
+
+  return predictions.map((prediction) => {
+    const fixture = prediction.fixture;
+    const timedState = getTimedMatchState(
+      fixture.kickoff.toISOString(),
+      fixture.status as UserPredictionEntry["status"],
+      fixture.elapsed ?? undefined,
+    );
+
+    return {
+      id: prediction.id,
+      matchId: fixture.externalId,
+      stage: fixture.stage,
+      group: fixture.groupName,
+      kickoff: fixture.kickoff.toISOString(),
+      venue: fixture.venue,
+      status: timedState.status,
+      home: {
+        id: fixture.homeTeamId,
+        name: fixture.homeName,
+        code: fixture.homeCode,
+        logo: fixture.homeLogo ?? undefined,
+      },
+      away: {
+        id: fixture.awayTeamId,
+        name: fixture.awayName,
+        code: fixture.awayCode,
+        logo: fixture.awayLogo ?? undefined,
+      },
+      prediction: {
+        home: prediction.homeScore,
+        away: prediction.awayScore,
+        wager: prediction.wagerPoints,
+      },
+      result: {
+        home: fixture.homeScore,
+        away: fixture.awayScore,
+      },
+      outcomeCorrect: prediction.outcomeCorrect,
+      exactScore: prediction.exactScore,
+      payoutPoints: prediction.points,
+      scoredAt: prediction.scoredAt?.toISOString(),
+      updatedAt: prediction.updatedAt.toISOString(),
+    };
+  });
 }
 
 export async function getLeaderboard(limit = 10): Promise<RankingEntry[]> {
