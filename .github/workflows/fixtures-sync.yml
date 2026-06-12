@@ -1,0 +1,43 @@
+name: fixtures-sync
+
+# Hobby 플랜에는 Vercel cron이 없어 라이브 점수 동기화를 GitHub Actions로 돌린다.
+# 스케줄 워크플로는 기본 브랜치(main)에서만 트리거된다.
+on:
+  schedule:
+    - cron: "*/5 * * * *" # 라이브 결과: 5분마다 (GitHub Actions 최소 간격)
+    - cron: "0 0 * * *" # 일정 동기화: 매일 1회 (UTC 00:00)
+  workflow_dispatch: # 수동 실행
+
+concurrency:
+  group: fixtures-sync
+  cancel-in-progress: false
+
+env:
+  BASE_URL: https://kickoff26-self.vercel.app
+
+jobs:
+  results:
+    # 라이브 결과 동기화: 5분 스케줄 + 수동 실행에서만 (일일 스케줄 제외)
+    if: github.event.schedule != '0 0 * * *'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync live results
+        env:
+          AUTH: "Bearer ${{ secrets.CRON_SECRET }}"
+        run: |
+          curl -fsS --retry 2 --max-time 120 \
+            -X POST "$BASE_URL/api/admin/fixtures/results" \
+            -H "Authorization: $AUTH"
+
+  schedule:
+    # 일정 동기화: 일일 스케줄 + 수동 실행에서만
+    if: github.event.schedule == '0 0 * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync schedule
+        env:
+          AUTH: "Bearer ${{ secrets.CRON_SECRET }}"
+        run: |
+          curl -fsS --retry 2 --max-time 120 \
+            -X POST "$BASE_URL/api/admin/fixtures/sync" \
+            -H "Authorization: $AUTH"
