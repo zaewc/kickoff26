@@ -83,7 +83,20 @@ export async function GET(request: NextRequest) {
         student?.class_num,
       number: profile.number ?? student?.number,
     };
-    await upsertUser(user);
+    const existing = await findUserBySession(user);
+    const dbUser = await upsertUser(user);
+    user.refCode = dbUser.id;
+
+    if (!existing) {
+      const ref = request.cookies.get("kickoff_ref")?.value;
+      if (ref) {
+        try {
+          await awardReferral(dbUser.id, decodeURIComponent(ref));
+        } catch (error) {
+          console.error("Referral award failed:", error);
+        }
+      }
+    }
 
     const response = NextResponse.redirect(new URL("/", request.url));
     response.cookies.set(
@@ -93,6 +106,7 @@ export async function GET(request: NextRequest) {
     );
     response.cookies.delete("oauth_state");
     response.cookies.delete("oauth_verifier");
+    response.cookies.delete("kickoff_ref");
     return response;
   } catch (error) {
     console.error("DataGSM OAuth callback failed:", error);

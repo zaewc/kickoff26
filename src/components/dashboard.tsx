@@ -9,12 +9,15 @@ import {
   CircleUserRound,
   Clock3,
   Coins,
+  Copy,
   Flame,
+  Gift,
   LogOut,
   MapPin,
   Minus,
   Plus,
   Radio,
+  Share2,
   ShieldCheck,
   Sparkles,
   Trophy,
@@ -40,6 +43,13 @@ type DashboardProps = {
   initialUserStats: UserStats;
   dataMode: FixtureDataMode;
   user: SessionUser | null;
+};
+
+type ReferralSummary = {
+  shareUrl: string;
+  referralCount: number;
+  earnedPoints: number;
+  rewardPoints: number;
 };
 
 const formatKickoff = (value: string) =>
@@ -560,6 +570,9 @@ export function Dashboard({
   const [toast, setToast] = useState<string | null>(null);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [savingMatchId, setSavingMatchId] = useState<number | null>(null);
+  const [referralSummary, setReferralSummary] =
+    useState<ReferralSummary | null>(null);
+  const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
     if (!toast) return;
@@ -577,6 +590,18 @@ export function Dashboard({
     const timer = window.setInterval(syncClock, 30_000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    void fetch("/api/referrals", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return (await response.json()) as ReferralSummary;
+      })
+      .then((summary) => {
+        if (summary) setReferralSummary(summary);
+      });
+  }, [user]);
 
   const liveMatch = matches.find((match) => match.status === "LIVE");
   const defaultPrediction = (id: number): Prediction =>
@@ -701,6 +726,35 @@ export function Dashboard({
   const savedCount = Object.values(predictions).filter(
     (prediction) => prediction.updatedAt,
   ).length;
+
+  const shareReferral = async () => {
+    if (!referralSummary || sharing) return;
+    setSharing(true);
+    const shareData = {
+      title: "KICKOFF 26",
+      text: "2026 월드컵 승부예측에 참여해보세요!",
+      url: referralSummary.shareUrl,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(referralSummary.shareUrl);
+        setToast("초대 링크를 복사했습니다.");
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") return;
+      try {
+        await navigator.clipboard.writeText(referralSummary.shareUrl);
+        setToast("초대 링크를 복사했습니다.");
+      } catch {
+        setToast("초대 링크를 복사하지 못했습니다.");
+      }
+    } finally {
+      setSharing(false);
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -988,6 +1042,61 @@ export function Dashboard({
                 </div>
               )}
             </section>
+
+            {user && (
+              <section className="overflow-hidden rounded-[22px] border border-[#dfe5dc] bg-white p-5 shadow-sm">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="mb-1 text-[10px] font-extrabold tracking-[0.12em] text-[#2d7658]">
+                      INVITE FRIENDS
+                    </p>
+                    <h3 className="display text-lg font-bold tracking-tight">
+                      친구 초대하고 10P 받기
+                    </h3>
+                    <p className="mt-1.5 text-[10px] leading-4 text-[#7b8780]">
+                      공유한 링크로 친구가 처음 가입하면 내 지갑에 10P가
+                      지급됩니다.
+                    </p>
+                  </div>
+                  <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-[#e5f3df] text-[#246047]">
+                    <Gift size={19} />
+                  </span>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <div className="rounded-xl bg-[#f3f6f0] px-3 py-2.5">
+                    <p className="display text-base font-bold">
+                      {referralSummary?.referralCount ?? 0}명
+                    </p>
+                    <p className="text-[9px] font-semibold text-[#879189]">
+                      가입 완료
+                    </p>
+                  </div>
+                  <div className="rounded-xl bg-[#f3f6f0] px-3 py-2.5">
+                    <p className="display text-base font-bold text-[#28694f]">
+                      +{referralSummary?.earnedPoints ?? 0}P
+                    </p>
+                    <p className="text-[9px] font-semibold text-[#879189]">
+                      초대 보상
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#153f31] py-3 text-xs font-bold text-white transition hover:bg-[#0b2e23] disabled:opacity-50"
+                  disabled={!referralSummary || sharing}
+                  onClick={shareReferral}
+                  type="button"
+                >
+                  {navigatorShareAvailable() ? (
+                    <Share2 size={14} />
+                  ) : (
+                    <Copy size={14} />
+                  )}
+                  {sharing ? "공유 중..." : "초대 링크 공유"}
+                </button>
+              </section>
+            )}
 
             <div className="flex items-center gap-3 rounded-2xl border border-[#dfe4de] bg-white px-4 py-3.5 text-[10px] leading-4 text-[#78847d]">
               <Coins className="shrink-0 text-[#47705d]" size={17} />
