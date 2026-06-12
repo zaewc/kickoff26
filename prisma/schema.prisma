@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id            String       @id @default(cuid())
+  datagsmId     String       @unique
+  email         String?      @unique
+  name          String
+  grade         Int?
+  classNumber   Int?
+  studentNumber Int?
+  pointBalance  Int                  @default(1000)
+  lastLoginAt   DateTime     @default(now())
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  predictions   Prediction[]
+  revisions     PredictionRevision[]
+  pointTransactions PointTransaction[]
+
+  @@index([grade, classNumber])
+}
+
+model Fixture {
+  id          String       @id @default(cuid())
+  externalId  Int          @unique
+  stage       String
+  groupName   String
+  kickoff     DateTime
+  venue       String
+  status      String
+  elapsed     Int?
+  homeTeamId  Int
+  homeName    String
+  homeCode    String
+  homeLogo    String?
+  awayTeamId  Int
+  awayName    String
+  awayCode    String
+  awayLogo    String?
+  homeScore   Int?
+  awayScore   Int?
+  dataMode    String       @default("live")
+  settledAt   DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  predictions Prediction[]
+  revisions   PredictionRevision[]
+
+  @@index([kickoff])
+  @@index([status])
+}
+
+model Prediction {
+  id             String   @id @default(cuid())
+  userId         String
+  fixtureId      String
+  homeScore      Int
+  awayScore      Int
+  points         Int      @default(0)
+  wagerPoints    Int      @default(100)
+  outcomeCorrect Boolean  @default(false)
+  exactScore     Boolean  @default(false)
+  scoredAt       DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fixture        Fixture  @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, fixtureId])
+  @@index([userId, points])
+  @@index([fixtureId])
+}
+
+model PredictionRevision {
+  id         String   @id @default(cuid())
+  userId     String
+  fixtureId  String
+  homeScore  Int
+  awayScore  Int
+  wagerPoints Int      @default(100)
+  action     String
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fixture    Fixture  @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+
+  @@index([userId, fixtureId, createdAt])
+}
+
+model PointTransaction {
+  id           String   @id @default(cuid())
+  userId       String
+  fixtureId    String?
+  predictionId String?
+  type         String
+  amount       Int
+  balanceAfter Int
+  description  String
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([fixtureId])
+  @@index([predictionId])
+}

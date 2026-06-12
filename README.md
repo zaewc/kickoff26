@@ -6,14 +6,15 @@ Next.js 서비스입니다.
 ## 실행
 
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 npm install
+npm run db:migrate
 npm run dev
 ```
 
-`http://localhost:3000`에서 확인할 수 있습니다. 축구 API 키가 없으면
-데모 데이터를 사용하며, 키를 설정하면 API-Football의 2026 월드컵
-(`league=1`, `season=2026`) 데이터로 자동 전환됩니다.
+`http://localhost:3000`에서 확인할 수 있습니다. 최초 실행 시 DB가 비어
+있으면 데모 경기 5개를 자동으로 넣습니다. 아래 일정 동기화를 한 번 실행하면
+openfootball의 실제 2026 월드컵 104경기로 교체됩니다.
 
 ## DataGSM OAuth 설정
 
@@ -33,16 +34,61 @@ DataGSM 액세스 토큰은 사용자 정보를 조회한 뒤 폐기하며 브�
 | `DATAGSM_CLIENT_ID` | DataGSM OAuth Client ID |
 | `DATAGSM_REDIRECT_URI` | 사전 등록한 OAuth 콜백 URI |
 | `SESSION_SECRET` | 세션 쿠키 서명용 32자 이상 임의 문자열 |
-| `API_FOOTBALL_KEY` | API-Football API 키, 미설정 시 데모 모드 |
+| `DATABASE_URL` | SQLite 경로, 기본값 `file:./dev.db` |
+| `FOOTBALL_DATA_API_KEY` | football-data.org 무료 결과 갱신 키, 선택 |
+| `CRON_SECRET` | 경기 데이터 동기화 API 인증값 |
 
-## 데이터와 예측
+## 무료 경기 일정 적재
 
-- 경기 일정/실시간 점수: API-Football, 30초 서버 캐시
-- 사용자 인증: DataGSM OAuth
-- MVP 예측 저장: 로그인한 브라우저의 `localStorage`
+openfootball의 CC0 공개 JSON을 사용하므로 API 키나 결제가 필요 없습니다.
 
-다중 기기 예측 동기화와 조작 방지가 필요한 운영 환경에서는 예측을 서버
-DB에 저장하고 경기 시작 시각 이후 수정을 차단해야 합니다.
+```bash
+curl -X POST http://localhost:3000/api/admin/fixtures/sync \
+  -H "Authorization: Bearer $CRON_SECRET"
+```
+
+이 요청은 2026 월드컵 104경기를 DB에 upsert하고 기존 데모 일정을
+제거합니다. 일반 페이지 요청은 외부 API를 호출하지 않고 DB만 읽습니다.
+
+## 무료 결과 갱신
+
+[football-data.org](https://www.football-data.org/)에서 무료 키를 발급한 뒤
+`FOOTBALL_DATA_API_KEY`를 설정합니다. 무료 플랜의 결과는 지연될 수 있습니다.
+
+```bash
+curl -X POST http://localhost:3000/api/admin/fixtures/results \
+  -H "Authorization: Bearer $CRON_SECRET"
+```
+
+외부 결과가 늦거나 누락된 경우 관리자가 직접 결과를 확정할 수 있습니다.
+확정 즉시 베팅 풀이 정산됩니다.
+
+```bash
+curl -X PUT http://localhost:3000/api/admin/fixtures/20260001/result \
+  -H "Authorization: Bearer $CRON_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"homeScore":2,"awayScore":1}'
+```
+
+## DB 구조
+
+- `User`: DataGSM 사용자, 학년·반, 포인트 지갑
+- `Fixture`: 2026 월드컵 일정, 상태, 실제 스코어
+- `Prediction`: 사용자별 경기 점수 예측, 베팅액, 배당 결과
+- `PredictionRevision`: 예측 생성·수정·삭제 이력
+- `PointTransaction`: 베팅 차감·환불·배당 포인트 원장
+
+신규 사용자는 1,000P로 시작하며 경기당 10P부터 500P까지 베팅할 수
+있습니다. 경기 시작 후 예측 변경은 서버에서 차단됩니다. 종료 경기 동기화
+시 전체 베팅 풀의 70%는 정확한 스코어 적중자, 30%는 승무패만 적중한
+사용자에게 각 베팅액 비율대로 분배됩니다. 한 그룹에 적중자가 없으면 해당
+몫은 다른 적중 그룹으로 넘어가며, 적중자가 전혀 없으면 전원 환불됩니다.
+
+```bash
+npm run db:migrate  # 미적용 SQL 마이그레이션 적용
+npm run db:studio   # DB 확인
+npm run db:generate # Prisma Client 재생성
+```
 
 ## Getting Started
 

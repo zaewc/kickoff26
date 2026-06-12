@@ -8,6 +8,7 @@ import {
   ChevronDown,
   CircleUserRound,
   Clock3,
+  Coins,
   Flame,
   LogOut,
   MapPin,
@@ -17,19 +18,26 @@ import {
   ShieldCheck,
   Sparkles,
   Trophy,
-  Users,
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Match, Prediction, SessionUser } from "@/lib/types";
+import {
+  Match,
+  Prediction,
+  RankingEntry,
+  SessionUser,
+  UserStats,
+  FixtureDataMode,
+} from "@/lib/types";
 
 type DashboardProps = {
   initialMatches: Match[];
-  dataMode: "live" | "demo";
+  initialPredictions: Record<number, Prediction>;
+  initialRankings: RankingEntry[];
+  initialUserStats: UserStats;
+  dataMode: FixtureDataMode;
   user: SessionUser | null;
 };
-
-const STORAGE_KEY = "kickoff-26-predictions";
 
 const formatKickoff = (value: string) =>
   new Intl.DateTimeFormat("ko-KR", {
@@ -102,18 +110,53 @@ function ScoreControl({
   );
 }
 
+function WagerControl({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <div className="flex items-center gap-1 rounded-xl border border-[#dce2dc] bg-white p-1">
+      <button
+        aria-label="베팅 포인트 내리기"
+        className="grid size-7 place-items-center rounded-lg text-[#6e7b74] hover:bg-[#f3f5f1]"
+        onClick={() => onChange(Math.max(10, value - 10))}
+        type="button"
+      >
+        <Minus size={13} />
+      </button>
+      <span className="display min-w-14 text-center text-sm font-bold tabular-nums">
+        {value}P
+      </span>
+      <button
+        aria-label="베팅 포인트 올리기"
+        className="grid size-7 place-items-center rounded-lg bg-[#e9f0e4] text-[#174a37] hover:bg-[#dce8d6]"
+        onClick={() => onChange(Math.min(500, value + 10))}
+        type="button"
+      >
+        <Plus size={13} />
+      </button>
+    </div>
+  );
+}
+
 function MatchCard({
   match,
   prediction,
   onPredict,
   onSave,
+  saving,
 }: {
   match: Match;
   prediction: Prediction;
   onPredict: (prediction: Prediction) => void;
   onSave: () => void;
+  saving: boolean;
 }) {
   const isLive = match.status === "LIVE";
+  const canPredict = match.status === "UPCOMING";
 
   return (
     <article
@@ -184,43 +227,65 @@ function MatchCard({
             />
           </div>
           <p className="mt-1.5 text-right text-[10px] text-[#8b9690]">
-            {numberFormat.format(match.crowd.predictions)}명 참여
+            {numberFormat.format(match.crowd.predictions)}명 · 풀{" "}
+            <b className="text-[#536159]">
+              {numberFormat.format(match.crowd.poolPoints)}P
+            </b>
           </p>
         </div>
 
         <div className="rounded-2xl bg-[#f6f7f3] p-3">
           <div className="mb-2.5 flex items-center justify-between">
-            <span className="text-xs font-bold text-[#405048]">내 점수 예측</span>
+            <span className="text-xs font-bold text-[#405048]">
+              {canPredict ? "내 점수 예측" : "예측 마감"}
+            </span>
             {prediction.updatedAt && (
               <span className="flex items-center gap-1 text-[10px] font-semibold text-[#2e7457]">
                 <Check size={11} /> 저장됨
               </span>
             )}
           </div>
-          <div className="flex items-center justify-between gap-2">
-            <ScoreControl
-              label={match.home.name}
-              value={prediction.home}
-              onChange={(home) =>
-                onPredict({ ...prediction, home, updatedAt: "" })
-              }
-            />
-            <span className="text-xs font-bold text-[#abb2ad]">:</span>
-            <ScoreControl
-              label={match.away.name}
-              value={prediction.away}
-              onChange={(away) =>
-                onPredict({ ...prediction, away, updatedAt: "" })
-              }
-            />
-            <button
-              className="ml-1 rounded-xl bg-[#123f30] px-3.5 py-2.5 text-xs font-bold text-white transition hover:bg-[#0a2d22]"
-              onClick={onSave}
-              type="button"
-            >
-              예측
-            </button>
-          </div>
+          {canPredict ? (
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <ScoreControl
+                  label={match.home.name}
+                  value={prediction.home}
+                  onChange={(home) =>
+                    onPredict({ ...prediction, home, updatedAt: "" })
+                  }
+                />
+                <span className="text-xs font-bold text-[#abb2ad]">:</span>
+                <ScoreControl
+                  label={match.away.name}
+                  value={prediction.away}
+                  onChange={(away) =>
+                    onPredict({ ...prediction, away, updatedAt: "" })
+                  }
+                />
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <WagerControl
+                  value={prediction.wager}
+                  onChange={(wager) =>
+                    onPredict({ ...prediction, wager, updatedAt: "" })
+                  }
+                />
+                <button
+                  className="rounded-xl bg-[#123f30] px-4 py-2.5 text-xs font-bold text-white transition hover:bg-[#0a2d22] disabled:opacity-60"
+                  disabled={saving}
+                  onClick={onSave}
+                  type="button"
+                >
+                  {saving ? "저장 중" : "베팅 저장"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs leading-5 text-[#7c8781]">
+              경기 시작 이후에는 점수 예측을 새로 저장하거나 수정할 수 없습니다.
+            </p>
+          )}
         </div>
       </div>
     </article>
@@ -232,11 +297,13 @@ function FeaturedMatch({
   prediction,
   onPredict,
   onSave,
+  saving,
 }: {
   match: Match;
   prediction: Prediction;
   onPredict: (prediction: Prediction) => void;
   onSave: () => void;
+  saving: boolean;
 }) {
   return (
     <section className="noise relative overflow-hidden rounded-[28px] bg-[#073f30] px-6 py-6 text-white shadow-[0_24px_70px_rgba(7,63,48,0.22)] md:px-9 md:py-8">
@@ -317,72 +384,78 @@ function FeaturedMatch({
                 style={{ width: `${match.crowd.away}%` }}
               />
             </div>
+            <p className="mt-2 text-right text-[10px] font-semibold text-white/50">
+              전체 베팅 풀 {numberFormat.format(match.crowd.poolPoints)}P
+            </p>
           </div>
 
-          <div className="flex items-center justify-between gap-2 rounded-2xl bg-white/10 p-2 md:justify-start">
-            <ScoreControl
-              label={match.home.name}
-              value={prediction.home}
-              onChange={(home) =>
-                onPredict({ ...prediction, home, updatedAt: "" })
-              }
-            />
-            <span className="font-bold text-white/35">:</span>
-            <ScoreControl
-              label={match.away.name}
-              value={prediction.away}
-              onChange={(away) =>
-                onPredict({ ...prediction, away, updatedAt: "" })
-              }
-            />
-            <button
-              className="rounded-xl bg-[#c9ff3d] px-4 py-3 text-xs font-extrabold text-[#123a2c] transition hover:bg-[#d7ff70]"
-              onClick={onSave}
-              type="button"
-            >
-              예측하기
-            </button>
-          </div>
+          {match.status === "UPCOMING" ? (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-white/10 p-2 md:justify-start">
+              <ScoreControl
+                label={match.home.name}
+                value={prediction.home}
+                onChange={(home) =>
+                  onPredict({ ...prediction, home, updatedAt: "" })
+                }
+              />
+              <span className="font-bold text-white/35">:</span>
+              <ScoreControl
+                label={match.away.name}
+                value={prediction.away}
+                onChange={(away) =>
+                  onPredict({ ...prediction, away, updatedAt: "" })
+                }
+              />
+              <WagerControl
+                value={prediction.wager}
+                onChange={(wager) =>
+                  onPredict({ ...prediction, wager, updatedAt: "" })
+                }
+              />
+              <button
+                className="rounded-xl bg-[#c9ff3d] px-4 py-3 text-xs font-extrabold text-[#123a2c] transition hover:bg-[#d7ff70]"
+                disabled={saving}
+                onClick={onSave}
+                type="button"
+              >
+                {saving ? "저장 중" : "예측하기"}
+              </button>
+            </div>
+          ) : (
+            <div className="rounded-2xl bg-white/10 px-4 py-3 text-center text-xs font-bold text-white/65">
+              경기가 시작되어 예측이 마감되었습니다.
+            </div>
+          )}
         </div>
       </div>
     </section>
   );
 }
 
-const ranking = [
-  { rank: 1, name: "박준서", detail: "2학년 3반", points: 1280, hit: "78%" },
-  { rank: 2, name: "김도윤", detail: "3학년 1반", points: 1195, hit: "74%" },
-  { rank: 3, name: "이서진", detail: "1학년 4반", points: 1110, hit: "71%" },
-  { rank: 4, name: "정우현", detail: "2학년 2반", points: 1065, hit: "69%" },
-];
-
 export function Dashboard({
   initialMatches,
+  initialPredictions,
+  initialRankings,
+  initialUserStats,
   dataMode,
   user,
 }: DashboardProps) {
-  const [predictions, setPredictions] = useState<Record<number, Prediction>>({});
+  const [matches, setMatches] = useState(initialMatches);
+  const [predictions, setPredictions] =
+    useState<Record<number, Prediction>>(initialPredictions);
+  const [savedWagers, setSavedWagers] = useState<Record<number, number>>(
+    Object.fromEntries(
+      Object.entries(initialPredictions).map(([id, prediction]) => [
+        Number(id),
+        prediction.wager,
+      ]),
+    ),
+  );
+  const [userStats, setUserStats] = useState(initialUserStats);
   const [filter, setFilter] = useState<"all" | "live" | "upcoming">("all");
   const [toast, setToast] = useState<string | null>(null);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as Record<number, Prediction>;
-        queueMicrotask(() => {
-          if (!cancelled) setPredictions(parsed);
-        });
-      }
-    } catch {
-      localStorage.removeItem(STORAGE_KEY);
-    }
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const [savingMatchId, setSavingMatchId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!toast) return;
@@ -390,12 +463,12 @@ export function Dashboard({
     return () => window.clearTimeout(timer);
   }, [toast]);
 
-  const liveMatch = initialMatches.find((match) => match.status === "LIVE");
+  const liveMatch = matches.find((match) => match.status === "LIVE");
   const defaultPrediction = (id: number): Prediction =>
-    predictions[id] ?? { home: 0, away: 0, updatedAt: "" };
+    predictions[id] ?? { home: 0, away: 0, wager: 100, updatedAt: "" };
 
   const visibleMatches = useMemo(() => {
-    const withoutFeatured = initialMatches.filter(
+    const withoutFeatured = matches.filter(
       (match) => match.id !== liveMatch?.id,
     );
     if (filter === "live") {
@@ -405,27 +478,87 @@ export function Dashboard({
       return withoutFeatured.filter((match) => match.status === "UPCOMING");
     }
     return withoutFeatured.slice(0, 6);
-  }, [filter, initialMatches, liveMatch?.id]);
+  }, [filter, matches, liveMatch?.id]);
 
   const updatePrediction = (id: number, prediction: Prediction) => {
     setPredictions((current) => ({ ...current, [id]: prediction }));
   };
 
-  const savePrediction = (id: number) => {
+  const savePrediction = async (id: number) => {
     if (!user) {
       setShowLoginPrompt(true);
       return;
     }
-    const next = {
-      ...predictions,
-      [id]: {
-        ...defaultPrediction(id),
-        updatedAt: new Date().toISOString(),
-      },
-    };
-    setPredictions(next);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    setToast("예측이 저장되었습니다. 경기 시작 전까지 수정할 수 있어요.");
+    const draft = defaultPrediction(id);
+    const wasSaved = savedWagers[id] !== undefined;
+    const previousWager = savedWagers[id] ?? 0;
+    setSavingMatchId(id);
+
+    try {
+      const response = await fetch(`/api/predictions/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          homeScore: draft.home,
+          awayScore: draft.away,
+          wagerPoints: draft.wager,
+        }),
+      });
+      const payload = (await response.json()) as {
+        prediction?: Prediction;
+        balance?: number;
+        error?: string;
+      };
+      if (!response.ok || !payload.prediction) {
+        throw new Error(payload.error || "예측 저장에 실패했습니다.");
+      }
+
+      setPredictions((current) => ({
+        ...current,
+        [id]: payload.prediction!,
+      }));
+      setSavedWagers((current) => ({
+        ...current,
+        [id]: payload.prediction!.wager,
+      }));
+      setMatches((current) =>
+        current.map((match) =>
+          match.id === id
+            ? {
+                ...match,
+                crowd: {
+                  ...match.crowd,
+                  predictions:
+                    match.crowd.predictions + (wasSaved ? 0 : 1),
+                  poolPoints:
+                    match.crowd.poolPoints +
+                    payload.prediction!.wager -
+                    previousWager,
+                },
+              }
+            : match,
+        ),
+      );
+      if (!wasSaved) {
+        setUserStats((current) => ({
+          ...current,
+          predictions: current.predictions + 1,
+        }));
+      }
+      if (typeof payload.balance === "number") {
+        setUserStats((current) => ({
+          ...current,
+          balance: payload.balance!,
+        }));
+      }
+      setToast("예측이 DB에 저장되었습니다. 경기 시작 전까지 수정할 수 있어요.");
+    } catch (error) {
+      setToast(
+        error instanceof Error ? error.message : "예측 저장에 실패했습니다.",
+      );
+    } finally {
+      setSavingMatchId(null);
+    }
   };
 
   const savedCount = Object.values(predictions).filter(
@@ -498,13 +631,12 @@ export function Dashboard({
               <span>CANADA · MEXICO · USA</span>
             </div>
             <h1 className="display max-w-2xl text-[2.5rem] font-extrabold leading-[1.04] tracking-[-0.055em] md:text-[4.2rem]">
-              감으로 찍지 말고,
+              야 이은아,
               <br />
-              <span className="text-[#0b5941]">기록으로 증명해.</span>
+              <span className="text-[#0b5941]">치킨 사줄 준비해</span>
             </h1>
             <p className="mt-4 max-w-xl text-sm leading-6 text-[#758078] md:text-base">
               2026 월드컵의 모든 경기를 예측하고 친구들과 적중률을 겨뤄보세요.
-              승패부터 정확한 스코어까지.
             </p>
           </div>
 
@@ -515,7 +647,7 @@ export function Dashboard({
             </div>
             <div className="rounded-xl px-4 py-3 text-center">
               <p className="display text-xl font-bold text-[#ff6137]">
-                {initialMatches.filter((match) => match.status === "LIVE").length}
+                {matches.filter((match) => match.status === "LIVE").length}
               </p>
               <p className="mt-0.5 text-[10px] font-semibold text-[#839087]">진행 중</p>
             </div>
@@ -530,9 +662,17 @@ export function Dashboard({
           <div className="mb-5 flex items-start gap-2.5 rounded-2xl border border-[#f0dba2] bg-[#fff8df] px-4 py-3 text-xs leading-5 text-[#785c16]">
             <Sparkles className="mt-0.5 shrink-0" size={15} />
             <p>
-              현재 데모 경기 데이터를 표시하고 있습니다.{" "}
-              <code className="font-bold">API_FOOTBALL_KEY</code>를 설정하면
-              2026 월드컵 일정과 실시간 스코어로 자동 전환됩니다.
+              현재 데모 경기 데이터를 표시하고 있습니다. 무료 openfootball
+              일정 동기화를 실행하면 실제 104경기 일정으로 전환됩니다.
+            </p>
+          </div>
+        )}
+        {dataMode === "open" && (
+          <div className="mb-5 flex items-start gap-2.5 rounded-2xl border border-[#cfe2d2] bg-[#eef8ed] px-4 py-3 text-xs leading-5 text-[#356047]">
+            <Sparkles className="mt-0.5 shrink-0" size={15} />
+            <p>
+              openfootball의 무료 2026 공식 일정 데이터를 사용 중입니다.
+              스코어는 football-data.org 또는 관리자 확정 결과로 갱신됩니다.
             </p>
           </div>
         )}
@@ -545,6 +685,7 @@ export function Dashboard({
               updatePrediction(liveMatch.id, prediction)
             }
             onSave={() => savePrediction(liveMatch.id)}
+            saving={savingMatchId === liveMatch.id}
           />
         )}
 
@@ -594,6 +735,7 @@ export function Dashboard({
                       updatePrediction(match.id, prediction)
                     }
                     onSave={() => savePrediction(match.id)}
+                    saving={savingMatchId === match.id}
                   />
                 ))}
               </div>
@@ -622,7 +764,7 @@ export function Dashboard({
                 </button>
               </div>
               <div className="px-3 py-2">
-                {ranking.map((item) => (
+                {initialRankings.map((item) => (
                   <div
                     className="grid grid-cols-[30px_1fr_auto] items-center gap-2 rounded-xl px-2 py-3 hover:bg-[#f5f7f2]"
                     key={item.rank}
@@ -648,11 +790,22 @@ export function Dashboard({
                         {numberFormat.format(item.points)} P
                       </p>
                       <p className="text-[9px] font-semibold text-[#2c795a]">
-                        적중 {item.hit}
+                        적중 {item.hitRate}%
                       </p>
                     </div>
                   </div>
                 ))}
+                {initialRankings.length === 0 && (
+                  <div className="px-4 py-10 text-center">
+                    <Trophy className="mx-auto mb-2 text-[#b5bdb8]" size={22} />
+                    <p className="text-xs font-bold text-[#66736c]">
+                      아직 채점된 예측이 없습니다.
+                    </p>
+                    <p className="mt-1 text-[10px] text-[#98a19c]">
+                      첫 경기 종료 후 랭킹이 열립니다.
+                    </p>
+                  </div>
+                )}
               </div>
               <button
                 className="flex w-full items-center justify-center gap-1 border-t border-[#edf0eb] py-3.5 text-[11px] font-bold text-[#526159] hover:bg-[#fafbf8]"
@@ -681,16 +834,22 @@ export function Dashboard({
               </div>
               <div className="grid grid-cols-3 gap-1.5">
                 <div className="rounded-xl bg-white/55 px-2 py-3 text-center">
-                  <p className="display text-lg font-bold">{savedCount}</p>
+                  <p className="display text-lg font-bold">
+                    {userStats.predictions}
+                  </p>
                   <p className="text-[9px] font-semibold text-[#52685a]">참여</p>
                 </div>
                 <div className="rounded-xl bg-white/55 px-2 py-3 text-center">
-                  <p className="display text-lg font-bold">-</p>
+                  <p className="display text-lg font-bold">
+                    {userStats.scoredPredictions ? `${userStats.hitRate}%` : "-"}
+                  </p>
                   <p className="text-[9px] font-semibold text-[#52685a]">적중률</p>
                 </div>
                 <div className="rounded-xl bg-white/55 px-2 py-3 text-center">
-                  <p className="display text-lg font-bold">0 P</p>
-                  <p className="text-[9px] font-semibold text-[#52685a]">포인트</p>
+                  <p className="display text-lg font-bold">
+                    {numberFormat.format(userStats.balance)} P
+                  </p>
+                  <p className="text-[9px] font-semibold text-[#52685a]">보유 포인트</p>
                 </div>
               </div>
               {!user && (
@@ -704,10 +863,11 @@ export function Dashboard({
             </section>
 
             <div className="flex items-center gap-3 rounded-2xl border border-[#dfe4de] bg-white px-4 py-3.5 text-[10px] leading-4 text-[#78847d]">
-              <Users className="shrink-0 text-[#47705d]" size={17} />
+              <Coins className="shrink-0 text-[#47705d]" size={17} />
               <p>
-                경기 결과 적중 시 <b className="text-[#31483d]">+30P</b>,
-                정확한 스코어 적중 시 <b className="text-[#31483d]">+100P</b>
+                전체 베팅 풀의 <b className="text-[#31483d]">70%</b>는 정확한
+                스코어, <b className="text-[#31483d]">30%</b>는 승무패
+                적중자에게 베팅액 비례로 분배됩니다.
               </p>
             </div>
           </aside>

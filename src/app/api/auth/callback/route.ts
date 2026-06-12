@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sessionCookie, signSession } from "@/lib/auth";
 import { SessionUser } from "@/lib/types";
+import { upsertUser } from "@/lib/users";
 
 const TOKEN_URL = "https://oauth.authorization.datagsm.kr/v1/oauth/token";
 const USERINFO_URL = "https://oauth.resource.datagsm.kr/userinfo";
@@ -80,6 +81,7 @@ export async function GET(request: NextRequest) {
         student?.class_num,
       number: profile.number ?? student?.number,
     };
+    await upsertUser(user);
 
     const response = NextResponse.redirect(new URL("/", request.url));
     response.cookies.set(

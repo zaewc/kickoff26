@@ -6,6 +6,7 @@ export type Team = {
 };
 
 export type MatchStatus = "LIVE" | "UPCOMING" | "FINISHED";
+export type FixtureDataMode = "demo" | "open" | "football-data";
 
 export type Match = {
   id: number;
@@ -24,6 +25,7 @@ export type Match = {
     draw: number;
     away: number;
     predictions: number;
+    poolPoints: number;
   };
 };
 
@@ -39,5 +41,24 @@ export type SessionUser = {
 export type Prediction = {
   home: number;
   away: number;
+  wager: number;
   updatedAt: string;
+};
+
+export type RankingEntry = {
+  rank: number;
+  name: string;
+  detail: string;
+  points: number;
+  hitRate: number;
+  predictions: number;
+};
+
+export type UserStats = {
+  predictions: number;
+  scoredPredictions: number;
+  correctPredictions: number;
+  hitRate: number;
+  points: number;
+  balance: number;
 };

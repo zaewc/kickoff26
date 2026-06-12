@@ -16,9 +16,20 @@
 # next.js
 /.next/
 /out/
+/src/generated/prisma/
 
 # production
 /build
+
+# local database
+/*.db
+/*.db-journal
+/*.db-shm
+/*.db-wal
+/prisma/*.db
+/prisma/*.db-journal
+/prisma/*.db-shm
+/prisma/*.db-wal
 
 # misc
 .DS_Store
@@ -32,6 +43,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
