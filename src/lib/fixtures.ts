@@ -110,66 +110,67 @@ export async function syncFixtures() {
   });
   const migratedIds = new Set<string>();
 
-  await db.$transaction(async (transaction) => {
-    for (const match of matches) {
-      const existing = existingFixtures.find(
-        (fixture) => fixture.externalId === match.id,
-      );
-      const legacyDemo = existingFixtures.find(
-        (fixture) =>
-          fixture.dataMode === "demo" &&
-          !migratedIds.has(fixture.id) &&
-          normalizeTeamName(fixture.homeName) === normalizeTeamName(match.home.name) &&
-          normalizeTeamName(fixture.awayName) === normalizeTeamName(match.away.name),
-      );
+  // Per-row writes instead of one interactive transaction: against remote
+  // Turso the 100+ sequential round-trips blow past the 5s transaction
+  // timeout. Upserts are idempotent, so the sync stays safe to re-run.
+  for (const match of matches) {
+    const existing = existingFixtures.find(
+      (fixture) => fixture.externalId === match.id,
+    );
+    const legacyDemo = existingFixtures.find(
+      (fixture) =>
+        fixture.dataMode === "demo" &&
+        !migratedIds.has(fixture.id) &&
+        normalizeTeamName(fixture.homeName) === normalizeTeamName(match.home.name) &&
+        normalizeTeamName(fixture.awayName) === normalizeTeamName(match.away.name),
+    );
 
-      if (legacyDemo && !existing) {
-        migratedIds.add(legacyDemo.id);
-        await transaction.fixture.update({
-          where: { id: legacyDemo.id },
-          data: {
-            externalId: match.id,
-            ...fixtureData(match, "open"),
-          },
-        });
-        continue;
-      }
-
-      await transaction.fixture.upsert({
-        where: { externalId: match.id },
-        create: {
+    if (legacyDemo && !existing) {
+      migratedIds.add(legacyDemo.id);
+      await db.fixture.update({
+        where: { id: legacyDemo.id },
+        data: {
           externalId: match.id,
           ...fixtureData(match, "open"),
         },
-        update: {
-          stage: match.stage,
-          groupName: match.group,
-          kickoff: new Date(match.kickoff),
-          venue: match.venue,
-          homeTeamId: match.home.id,
-          homeName: match.home.name,
-          homeCode: match.home.code,
-          awayTeamId: match.away.id,
-          awayName: match.away.name,
-          awayCode: match.away.code,
-          dataMode: existing?.dataMode === "football-data" ? "football-data" : "open",
-          ...(match.status === "FINISHED"
-            ? {
-                status: match.status,
-                homeScore: match.homeScore,
-                awayScore: match.awayScore,
-              }
-            : {}),
-        },
       });
+      continue;
     }
 
-    await transaction.fixture.deleteMany({
-      where: {
-        dataMode: "demo",
-        predictions: { none: {} },
+    await db.fixture.upsert({
+      where: { externalId: match.id },
+      create: {
+        externalId: match.id,
+        ...fixtureData(match, "open"),
+      },
+      update: {
+        stage: match.stage,
+        groupName: match.group,
+        kickoff: new Date(match.kickoff),
+        venue: match.venue,
+        homeTeamId: match.home.id,
+        homeName: match.home.name,
+        homeCode: match.home.code,
+        awayTeamId: match.away.id,
+        awayName: match.away.name,
+        awayCode: match.away.code,
+        dataMode: existing?.dataMode === "football-data" ? "football-data" : "open",
+        ...(match.status === "FINISHED"
+          ? {
+              status: match.status,
+              homeScore: match.homeScore,
+              awayScore: match.awayScore,
+            }
+          : {}),
       },
     });
+  }
+
+  await db.fixture.deleteMany({
+    where: {
+      dataMode: "demo",
+      predictions: { none: {} },
+    },
   });
 
   await settleFinishedFixtures();
@@ -195,45 +196,43 @@ export async function syncFixtureResults() {
   const fixtures = await db.fixture.findMany();
   let updated = 0;
 
-  await db.$transaction(async (transaction) => {
-    for (const result of results) {
-      const teamMatch = fixtures.find(
-        (fixture) =>
-          normalizeTeamName(fixture.homeName) ===
-            normalizeTeamName(result.home.name) &&
-          normalizeTeamName(fixture.awayName) ===
-            normalizeTeamName(result.away.name),
-      );
-      const kickoffMatch = fixtures.find(
-        (fixture) =>
-          Math.abs(fixture.kickoff.getTime() - result.kickoff.getTime()) <=
-          2 * 60 * 60 * 1000,
-      );
-      const fixture = teamMatch ?? kickoffMatch;
-      if (!fixture) continue;
+  for (const result of results) {
+    const teamMatch = fixtures.find(
+      (fixture) =>
+        normalizeTeamName(fixture.homeName) ===
+          normalizeTeamName(result.home.name) &&
+        normalizeTeamName(fixture.awayName) ===
+          normalizeTeamName(result.away.name),
+    );
+    const kickoffMatch = fixtures.find(
+      (fixture) =>
+        Math.abs(fixture.kickoff.getTime() - result.kickoff.getTime()) <=
+        2 * 60 * 60 * 1000,
+    );
+    const fixture = teamMatch ?? kickoffMatch;
+    if (!fixture) continue;
 
-      await transaction.fixture.update({
-        where: { id: fixture.id },
-        data: {
-          kickoff: result.kickoff,
-          venue: result.venue ?? fixture.venue,
-          status: result.status,
-          homeTeamId: result.home.id,
-          homeName: result.home.name,
-          homeCode: result.home.code,
-          homeLogo: result.home.logo,
-          awayTeamId: result.away.id,
-          awayName: result.away.name,
-          awayCode: result.away.code,
-          awayLogo: result.away.logo,
-          homeScore: result.homeScore,
-          awayScore: result.awayScore,
-          dataMode: "football-data",
-        },
-      });
-      updated += 1;
-    }
-  });
+    await db.fixture.update({
+      where: { id: fixture.id },
+      data: {
+        kickoff: result.kickoff,
+        venue: result.venue ?? fixture.venue,
+        status: result.status,
+        homeTeamId: result.home.id,
+        homeName: result.home.name,
+        homeCode: result.home.code,
+        homeLogo: result.home.logo,
+        awayTeamId: result.away.id,
+        awayName: result.away.name,
+        awayCode: result.away.code,
+        awayLogo: result.away.logo,
+        homeScore: result.homeScore,
+        awayScore: result.awayScore,
+        dataMode: "football-data",
+      },
+    });
+    updated += 1;
+  }
 
   await settleFinishedFixtures();
   return { mode: "football-data" as const, received: results.length, updated };

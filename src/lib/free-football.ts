@@ -28,18 +28,18 @@ type FootballDataMatch = {
   group?: string | null;
   venue?: string | null;
   homeTeam: {
-    id: number;
-    name: string;
-    shortName?: string;
-    tla?: string;
-    crest?: string;
+    id: number | null;
+    name: string | null;
+    shortName?: string | null;
+    tla?: string | null;
+    crest?: string | null;
   };
   awayTeam: {
-    id: number;
-    name: string;
-    shortName?: string;
-    tla?: string;
-    crest?: string;
+    id: number | null;
+    name: string | null;
+    shortName?: string | null;
+    tla?: string | null;
+    crest?: string | null;
   };
   score: {
     fullTime?: { home: number | null; away: number | null };
@@ -87,7 +87,7 @@ function stableNumber(value: string) {
   return Math.abs(hash);
 }
 
-function teamCode(name: string) {
+function teamCode(name: string | null | undefined) {
   const codes: Record<string, string> = {
     "South Korea": "KOR",
     "Korea Republic": "KOR",
@@ -97,6 +97,7 @@ function teamCode(name: string) {
     "United States": "USA",
     "New Zealand": "NZL",
   };
+  if (!name) return "TBD";
   if (/^[WL]\d+$/.test(name)) return name;
   return codes[name] ?? name.replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase();
 }
@@ -206,16 +207,16 @@ export async function fetchFootballDataResults(): Promise<FootballDataResult[]> 
     group: match.group ?? undefined,
     venue: match.venue ?? undefined,
     home: {
-      id: match.homeTeam.id,
-      name: match.homeTeam.shortName || match.homeTeam.name,
+      id: match.homeTeam.id ?? 0,
+      name: match.homeTeam.shortName || match.homeTeam.name || "미정",
       code: match.homeTeam.tla || teamCode(match.homeTeam.name),
-      logo: match.homeTeam.crest,
+      logo: match.homeTeam.crest ?? undefined,
     },
     away: {
-      id: match.awayTeam.id,
-      name: match.awayTeam.shortName || match.awayTeam.name,
+      id: match.awayTeam.id ?? 0,
+      name: match.awayTeam.shortName || match.awayTeam.name || "미정",
       code: match.awayTeam.tla || teamCode(match.awayTeam.name),
-      logo: match.awayTeam.crest,
+      logo: match.awayTeam.crest ?? undefined,
     },
     homeScore: match.score.fullTime?.home ?? null,
     awayScore: match.score.fullTime?.away ?? null,
