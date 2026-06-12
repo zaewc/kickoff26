@@ -724,12 +724,12 @@ export function Dashboard({
               <span>CANADA · MEXICO · USA</span>
             </div>
             <h1 className="display max-w-2xl text-[2.5rem] font-extrabold leading-[1.04] tracking-[-0.055em] md:text-[4.2rem]">
-              야 이은아,
+              도박이 아닙니다.
               <br />
-              <span className="text-[#0b5941]">치킨 사줄 준비해</span>
+              <span className="text-[#0b5941]">예측입니다.</span>
             </h1>
             <p className="mt-4 max-w-xl text-sm leading-6 text-[#758078] md:text-base">
-              2026 월드컵의 모든 경기를 예측하고 친구들과 적중률을 겨뤄보세요.
+              2026 월드컵의 모든 경기를 예측하고 상품을 받아가세요.
             </p>
           </div>
 
