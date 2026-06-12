@@ -18,7 +18,6 @@ import {
   Radio,
   Share2,
   ShieldCheck,
-  Sparkles,
   Trophy,
   X,
 } from "lucide-react";
@@ -107,14 +106,16 @@ function GoogleGlyph({ size = 15 }: { size?: number }) {
 function GoogleLoginLink({
   className,
   label = "Google로 로그인",
+  compactOnMobile = false,
 }: {
   className: string;
   label?: string;
+  compactOnMobile?: boolean;
 }) {
   return (
     <a className={className} href="/api/auth/google/login">
       <GoogleGlyph />
-      {label}
+      <span className={compactOnMobile ? "hidden sm:inline" : ""}>{label}</span>
     </a>
   );
 }
@@ -142,7 +143,10 @@ function TeamMark({
     CAN: "from-[#f23838] to-[#be0f1b] text-white",
     SUI: "from-[#e82222] to-[#ae0e0e] text-white",
   };
-  const dimension = size === "sm" ? "size-9 text-[10px]" : "size-14 text-xs";
+  const dimension =
+    size === "sm"
+      ? "size-9 text-[10px]"
+      : "size-11 text-[10px] sm:size-14 sm:text-xs";
 
   if (logo) {
     return (
@@ -255,8 +259,8 @@ function MatchCard({
         isLive ? "border-[#b9d8c6]" : "border-[#e1e6df]"
       }`}
     >
-      <div className="flex items-center justify-between border-b border-[#edf0eb] px-5 py-3.5">
-        <div className="flex items-center gap-2 text-xs font-semibold text-[#6f7c75]">
+      <div className="flex items-start justify-between gap-2 border-b border-[#edf0eb] px-4 py-3.5 sm:items-center sm:px-5">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 text-[11px] font-semibold text-[#6f7c75] sm:text-xs">
           {isLive ? (
             <>
               <span className="live-dot size-2 rounded-full bg-[#ff5c41]" />
@@ -269,22 +273,24 @@ function MatchCard({
           ) : (
             <Clock3 size={13} />
           )}
-          <span>{showScore ? match.stage : formatKickoff(match.kickoff)}</span>
+          <span className="min-w-0 truncate">
+            {showScore ? match.stage : formatKickoff(match.kickoff)}
+          </span>
         </div>
-        <span className="rounded-full bg-[#f0f3ed] px-2.5 py-1 text-[10px] font-bold text-[#506057]">
+        <span className="shrink-0 rounded-full bg-[#f0f3ed] px-2.5 py-1 text-[10px] font-bold text-[#506057]">
           {match.group}
         </span>
       </div>
 
-      <div className="px-5 pb-5 pt-4">
-        <div className="mb-4 flex items-center justify-center gap-4">
+      <div className="px-4 pb-4 pt-4 sm:px-5 sm:pb-5">
+        <div className="mb-4 flex items-center justify-center gap-2 sm:gap-4">
           <div className="flex min-w-0 flex-1 flex-col items-center gap-2 text-center">
             <TeamMark code={match.home.code} logo={match.home.logo} name={match.home.name} />
             <span className="line-clamp-1 text-sm font-bold">{match.home.name}</span>
           </div>
 
           {showScore ? (
-            <div className="display flex items-center gap-2 text-4xl font-bold tracking-tight">
+            <div className="display flex shrink-0 items-center gap-1.5 text-3xl font-bold tracking-tight sm:gap-2 sm:text-4xl">
               <span
                 className={
                   isFinished &&
@@ -360,7 +366,7 @@ function MatchCard({
           </div>
           {canPredict ? (
             <div className="space-y-2.5">
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center justify-between gap-1.5 sm:gap-2">
                 <ScoreControl
                   label={match.home.name}
                   value={prediction.home}
@@ -377,7 +383,7 @@ function MatchCard({
                   }
                 />
               </div>
-              <div className="flex items-center justify-between gap-2">
+              <div className="grid grid-cols-1 gap-2 min-[360px]:grid-cols-[auto_1fr] min-[360px]:items-center">
                 <WagerControl
                   value={prediction.wager}
                   onChange={(wager) =>
@@ -385,7 +391,7 @@ function MatchCard({
                   }
                 />
                 <button
-                  className="rounded-xl bg-[#123f30] px-4 py-2.5 text-xs font-bold text-white transition hover:bg-[#0a2d22] disabled:opacity-60"
+                  className="w-full rounded-xl bg-[#123f30] px-4 py-2.5 text-xs font-bold text-white transition hover:bg-[#0a2d22] disabled:opacity-60"
                   disabled={saving}
                   onClick={onSave}
                   type="button"
@@ -419,7 +425,7 @@ function FeaturedMatch({
   saving: boolean;
 }) {
   return (
-    <section className="noise relative overflow-hidden rounded-[28px] bg-[#073f30] px-6 py-6 text-white shadow-[0_24px_70px_rgba(7,63,48,0.22)] md:px-9 md:py-8">
+    <section className="noise relative overflow-hidden rounded-[22px] bg-[#073f30] px-4 py-5 text-white shadow-[0_24px_70px_rgba(7,63,48,0.22)] sm:rounded-[28px] sm:px-6 sm:py-6 md:px-9 md:py-8">
       <div className="absolute -right-12 -top-24 size-72 rounded-full border-[44px] border-white/[0.04]" />
       <div className="absolute -bottom-28 left-1/3 size-72 rounded-full border-[38px] border-[#c9ff3d]/[0.05]" />
 
@@ -443,19 +449,19 @@ function FeaturedMatch({
           </div>
         </div>
 
-        <div className="my-7 grid grid-cols-[1fr_auto_1fr] items-center gap-3 md:my-8 md:gap-8">
+        <div className="my-6 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:my-7 sm:gap-3 md:my-8 md:gap-8">
           <div className="flex flex-col items-center gap-3 text-center md:flex-row md:text-left">
             <TeamMark code={match.home.code} logo={match.home.logo} name={match.home.name} />
             <div>
               <p className="text-xs text-white/45">{match.home.code}</p>
-              <h2 className="display text-lg font-bold md:text-2xl">
+              <h2 className="display line-clamp-2 text-sm font-bold sm:text-lg md:text-2xl">
                 {match.home.name}
               </h2>
             </div>
           </div>
 
           <div className="text-center">
-            <div className="display flex items-center gap-2 text-5xl font-bold tracking-tight md:text-7xl">
+            <div className="display flex items-center gap-1 text-4xl font-bold tracking-tight sm:gap-2 sm:text-5xl md:text-7xl">
               <span>{match.homeScore}</span>
               <span className="text-2xl text-white/25">:</span>
               <span>{match.awayScore}</span>
@@ -468,7 +474,7 @@ function FeaturedMatch({
           <div className="flex flex-col-reverse items-center gap-3 text-center md:flex-row md:justify-end md:text-right">
             <div>
               <p className="text-xs text-white/45">{match.away.code}</p>
-              <h2 className="display text-lg font-bold md:text-2xl">
+              <h2 className="display line-clamp-2 text-sm font-bold sm:text-lg md:text-2xl">
                 {match.away.name}
               </h2>
             </div>
@@ -550,7 +556,6 @@ export function Dashboard({
   initialPredictions,
   initialRankings,
   initialUserStats,
-  dataMode,
   user,
 }: DashboardProps) {
   const [matches, setMatches] = useState(initialMatches);
@@ -758,12 +763,12 @@ export function Dashboard({
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-40 border-b border-[#dde3dc]/80 bg-[#f4f5f0]/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-[1240px] items-center justify-between px-4 md:px-7">
-          <a className="flex items-center gap-2.5" href="#">
-            <span className="grid size-9 rotate-3 place-items-center rounded-xl bg-[#0b4b38] text-[#c9ff3d] shadow-md">
+        <div className="mx-auto flex min-h-16 max-w-[1240px] items-center justify-between gap-2 px-3 py-2 sm:px-4 md:px-7">
+          <a className="flex min-w-0 shrink items-center gap-2 sm:gap-2.5" href="#">
+            <span className="grid size-8 shrink-0 rotate-3 place-items-center rounded-xl bg-[#0b4b38] text-[#c9ff3d] shadow-md sm:size-9">
               <Trophy size={18} strokeWidth={2.5} />
             </span>
-            <span className="display text-lg font-extrabold tracking-[-0.04em]">
+            <span className="display whitespace-nowrap text-base font-extrabold tracking-[-0.04em] sm:text-lg">
               KICKOFF <span className="text-[#ff6137]">26</span>
             </span>
           </a>
@@ -781,58 +786,60 @@ export function Dashboard({
           </nav>
 
           {user ? (
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-1 sm:gap-2">
               <div className="hidden text-right sm:block">
-                <p className="text-xs font-bold">{user.name}</p>
+                <p className="max-w-28 truncate text-xs font-bold">{user.name}</p>
               </div>
-              <span className="grid size-9 place-items-center rounded-full bg-[#dcebdd] text-[#174b37]">
+              <span className="grid size-8 place-items-center rounded-full bg-[#dcebdd] text-[#174b37] sm:size-9">
                 <CircleUserRound size={19} />
               </span>
               <a
                 aria-label="로그아웃"
-                className="grid size-9 place-items-center rounded-full text-[#7a8580] hover:bg-white"
+                className="grid size-8 place-items-center rounded-full text-[#7a8580] hover:bg-white sm:size-9"
                 href="/api/auth/logout"
               >
                 <LogOut size={17} />
               </a>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
               <GoogleLoginLink
-                className="flex items-center gap-2 rounded-full border border-[#dadce0] bg-white px-4 py-2.5 text-xs font-bold text-[#3c4043] shadow-sm transition hover:bg-[#f7f8f6]"
+                className="flex size-9 items-center justify-center rounded-full border border-[#dadce0] bg-white text-xs font-bold text-[#3c4043] shadow-sm transition hover:bg-[#f7f8f6] sm:h-auto sm:w-auto sm:gap-2 sm:px-4 sm:py-2.5"
+                compactOnMobile
                 label="Google 로그인"
               />
               <a
-                className="flex items-center gap-2 rounded-full bg-[#113e2f] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#082b20]"
+                aria-label="DataGSM 로그인"
+                className="flex size-9 items-center justify-center rounded-full bg-[#113e2f] text-xs font-bold text-white shadow-sm transition hover:bg-[#082b20] sm:h-auto sm:w-auto sm:gap-2 sm:px-4 sm:py-2.5"
                 href="/api/auth/login"
               >
                 <ShieldCheck size={15} />
-                DataGSM 로그인
+                <span className="hidden sm:inline">DataGSM 로그인</span>
               </a>
             </div>
           )}
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1240px] px-4 pb-16 pt-8 md:px-7 md:pt-12">
+      <main className="mx-auto max-w-[1240px] px-3 pb-20 pt-6 sm:px-4 sm:pt-8 md:px-7 md:pb-16 md:pt-12">
         <section className="mb-8 flex flex-col justify-between gap-5 md:mb-10 md:flex-row md:items-end">
           <div>
             <div className="mb-3 flex items-center gap-2 text-xs font-extrabold text-[#167052]">
               <span className="rounded-full bg-[#dff0dc] px-2.5 py-1">2026</span>
               <span>CANADA · MEXICO · USA</span>
             </div>
-            <h1 className="display max-w-2xl text-[2.5rem] font-extrabold leading-[1.04] tracking-[-0.055em] md:text-[4.2rem]">
+            <h1 className="display max-w-2xl text-[2.15rem] font-extrabold leading-[1.06] tracking-[-0.05em] min-[380px]:text-[2.5rem] md:text-[4.2rem]">
               도박이 아닙니다,
               <br />
               <span className="text-[#0b5941]">예측입니다.</span>
             </h1>
-            <div className="mt-4 flex flex-wrap items-center gap-3">
+            <div className="mt-4 grid gap-3 sm:flex sm:flex-wrap sm:items-center">
               <p className="max-w-xl text-sm leading-6 text-[#758078] md:text-base">
                 친구에게 공유하고, 친구가 가입하면 초대할 때마다 10P를
                 받아보세요.
               </p>
               <button
-                className="inline-flex items-center gap-2 rounded-full bg-[#153f31] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#0b2e23] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#153f31] px-4 py-3 text-xs font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#0b2e23] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:py-2.5"
                 disabled={Boolean(user && !referralSummary) || sharing}
                 onClick={() => {
                   if (!user) {
@@ -849,18 +856,18 @@ export function Dashboard({
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 rounded-2xl border border-[#dfe4de] bg-white p-2 shadow-sm">
-            <div className="rounded-xl bg-[#f1f4ee] px-4 py-3 text-center">
+          <div className="grid w-full grid-cols-3 gap-1.5 rounded-2xl border border-[#dfe4de] bg-white p-1.5 shadow-sm sm:gap-2 sm:p-2 md:w-auto">
+            <div className="rounded-xl bg-[#f1f4ee] px-2 py-3 text-center sm:px-4">
               <p className="display text-xl font-bold">104</p>
               <p className="mt-0.5 text-[10px] font-semibold text-[#839087]">전체 경기</p>
             </div>
-            <div className="rounded-xl px-4 py-3 text-center">
+            <div className="rounded-xl px-2 py-3 text-center sm:px-4">
               <p className="display text-xl font-bold text-[#ff6137]">
                 {matches.filter((match) => match.status === "LIVE").length}
               </p>
               <p className="mt-0.5 text-[10px] font-semibold text-[#839087]">진행 중</p>
             </div>
-            <div className="rounded-xl px-4 py-3 text-center">
+            <div className="rounded-xl px-2 py-3 text-center sm:px-4">
               <p className="display text-xl font-bold">{savedCount}</p>
               <p className="mt-0.5 text-[10px] font-semibold text-[#839087]">내 예측</p>
             </div>
@@ -879,8 +886,8 @@ export function Dashboard({
           />
         )}
 
-        <div className="mt-9 grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <section id="matches">
+        <div className="mt-7 grid min-w-0 gap-7 sm:mt-9 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <section className="min-w-0" id="matches">
             <div className="mb-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
@@ -893,10 +900,10 @@ export function Dashboard({
                 </div>
               </div>
               {matchDates.length > 0 && (
-                <div className="-mx-1 mt-3 flex gap-1.5 overflow-x-auto px-1 pb-1">
+                <div className="scrollbar-none -mx-3 mt-3 flex snap-x gap-1.5 overflow-x-auto px-3 pb-1 sm:-mx-1 sm:px-1">
                   {matchDates.map((date) => (
                     <button
-                      className={`shrink-0 whitespace-nowrap rounded-full border px-3.5 py-2 text-xs font-bold transition ${
+                      className={`shrink-0 snap-start whitespace-nowrap rounded-full border px-3.5 py-2 text-xs font-bold transition ${
                         activeDate === date
                           ? "border-[#153f31] bg-[#153f31] text-white"
                           : "border-[#dfe4de] bg-white text-[#7a8580] hover:text-[#153f31]"
@@ -942,7 +949,7 @@ export function Dashboard({
             />
           </section>
 
-          <aside className="space-y-5" id="ranking">
+          <aside className="min-w-0 space-y-5" id="ranking">
             <section className="overflow-hidden rounded-[22px] border border-[#dfe4de] bg-white">
               <div className="flex items-center justify-between border-b border-[#edf0eb] px-5 py-4">
                 <div className="flex items-center gap-2">
@@ -1124,9 +1131,9 @@ export function Dashboard({
       </main>
 
       <footer className="border-t border-[#dde3dc] py-7">
-        <div className="mx-auto flex max-w-[1240px] flex-col items-center justify-between gap-3 px-5 text-[10px] text-[#8c9690] sm:flex-row md:px-7">
+        <div className="mx-auto flex max-w-[1240px] flex-col items-center justify-between gap-3 px-4 text-center text-[10px] text-[#8c9690] sm:flex-row sm:text-left md:px-7">
           <p>© 2026 KICKOFF 26. 비공식 월드컵 승부예측 서비스</p>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
             <a className="flex items-center gap-1 hover:text-[#4b5a51]" href="/privacy">
               <ShieldCheck size={11} /> 개인정보처리방침
             </a>
@@ -1140,20 +1147,22 @@ export function Dashboard({
       <FloatingChat user={user} />
 
       {toast && (
-        <div className="fixed bottom-5 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full bg-[#123f30] px-5 py-3 text-xs font-bold text-white shadow-2xl">
-          <Check size={15} className="text-[#c9ff3d]" />
-          {toast}
+        <div className="fixed inset-x-3 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-[60] flex items-start justify-center sm:inset-x-auto sm:bottom-5 sm:left-1/2 sm:-translate-x-1/2">
+          <div className="flex max-w-md items-start gap-2 rounded-2xl bg-[#123f30] px-4 py-3 text-xs font-bold leading-5 text-white shadow-2xl sm:rounded-full sm:px-5">
+            <Check className="mt-0.5 shrink-0 text-[#c9ff3d]" size={15} />
+            {toast}
+          </div>
         </div>
       )}
 
       {showLoginPrompt && (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-[#0c211a]/55 px-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[70] grid place-items-end overflow-y-auto bg-[#0c211a]/55 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-10 backdrop-blur-sm sm:place-items-center sm:px-4 sm:py-6"
           onMouseDown={(event) => {
             if (event.currentTarget === event.target) setShowLoginPrompt(false);
           }}
         >
-          <div className="w-full max-w-sm rounded-[26px] bg-white p-6 shadow-2xl">
+          <div className="w-full max-w-sm rounded-[24px] bg-white p-5 shadow-2xl sm:rounded-[26px] sm:p-6">
             <div className="mb-5 flex items-start justify-between">
               <span className="grid size-11 place-items-center rounded-2xl bg-[#e2f1df] text-[#174c37]">
                 <ShieldCheck size={22} />

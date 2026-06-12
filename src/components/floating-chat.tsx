@@ -37,7 +37,7 @@ const mergeMessages = (current: ChatMessage[], incoming: ChatMessage[]) => {
 };
 
 export function FloatingChat({ user }: FloatingChatProps) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(true);
@@ -155,9 +155,9 @@ export function FloatingChat({ user }: FloatingChatProps) {
   };
 
   return (
-    <div className="fixed bottom-5 right-4 z-50 md:bottom-7 md:right-7">
+    <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-3 z-50 sm:right-4 md:bottom-7 md:right-7">
       {open && (
-        <section className="mb-3 flex h-[min(68vh,560px)] w-[calc(100vw-2rem)] max-w-[380px] flex-col overflow-hidden rounded-[24px] border border-[#dce3dc] bg-white shadow-[0_24px_80px_rgba(11,45,34,0.24)]">
+        <section className="fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] flex h-[min(72dvh,620px)] flex-col overflow-hidden rounded-[22px] border border-[#dce3dc] bg-white shadow-[0_24px_80px_rgba(11,45,34,0.24)] sm:static sm:mb-3 sm:h-[min(68vh,560px)] sm:w-[calc(100vw-2rem)] sm:max-w-[380px] sm:rounded-[24px]">
           <header className="flex items-center justify-between bg-[#0b4937] px-4 py-3.5 text-white">
             <div className="flex items-center gap-2.5">
               <span className="grid size-9 place-items-center rounded-xl bg-[#c9ff3d] text-[#113d2e]">
@@ -178,7 +178,7 @@ export function FloatingChat({ user }: FloatingChatProps) {
           </header>
 
           <div
-            className="scrollbar-none flex-1 space-y-3 overflow-y-auto bg-[#f4f6f1] px-4 py-4"
+            className="scrollbar-none min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain bg-[#f4f6f1] px-3 py-4 sm:px-4"
             ref={scrollRef}
           >
             {loading && (
