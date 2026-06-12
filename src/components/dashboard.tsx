@@ -9,7 +9,6 @@ import {
   CircleUserRound,
   Clock3,
   Coins,
-  Copy,
   Flame,
   Gift,
   LogOut,
@@ -1088,11 +1087,7 @@ export function Dashboard({
                   onClick={shareReferral}
                   type="button"
                 >
-                  {navigatorShareAvailable() ? (
-                    <Share2 size={14} />
-                  ) : (
-                    <Copy size={14} />
-                  )}
+                  <Share2 size={14} />
                   {sharing ? "공유 중..." : "초대 링크 공유"}
                 </button>
               </section>

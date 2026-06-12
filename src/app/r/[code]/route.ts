@@ -8,7 +8,7 @@ export async function GET(
 ) {
   const { code } = await context.params;
   const response = NextResponse.redirect(new URL("/", request.url));
-  const normalized = decodeURIComponent(code).trim();
+  const normalized = code.trim();
 
   if (normalized && normalized.length <= 64) {
     response.cookies.set("kickoff_ref", encodeURIComponent(normalized), {
