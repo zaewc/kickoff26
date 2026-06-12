@@ -11,6 +11,7 @@ import {
   Coins,
   Flame,
   Gift,
+  LoaderCircle,
   LogOut,
   MapPin,
   Minus,
@@ -577,6 +578,10 @@ export function Dashboard({
   const [referralSummary, setReferralSummary] =
     useState<ReferralSummary | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [showRankings, setShowRankings] = useState(false);
+  const [fullRankings, setFullRankings] = useState<RankingEntry[] | null>(null);
+  const [rankingsLoading, setRankingsLoading] = useState(false);
+  const [rankingsError, setRankingsError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!toast) return;
@@ -606,6 +611,15 @@ export function Dashboard({
         if (summary) setReferralSummary(summary);
       });
   }, [user]);
+
+  useEffect(() => {
+    if (!showRankings) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setShowRankings(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [showRankings]);
 
   const liveMatch = matches.find((match) => match.status === "LIVE");
   const defaultPrediction = (id: number): Prediction =>
@@ -757,6 +771,33 @@ export function Dashboard({
       }
     } finally {
       setSharing(false);
+    }
+  };
+
+  const openRankings = async () => {
+    setShowRankings(true);
+    if (fullRankings || rankingsLoading) return;
+
+    setRankingsLoading(true);
+    setRankingsError(null);
+    try {
+      const response = await fetch("/api/rankings", { cache: "no-store" });
+      const payload = (await response.json()) as {
+        rankings?: RankingEntry[];
+        error?: string;
+      };
+      if (!response.ok || !payload.rankings) {
+        throw new Error(payload.error || "전체 랭킹을 불러오지 못했습니다.");
+      }
+      setFullRankings(payload.rankings);
+    } catch (error) {
+      setRankingsError(
+        error instanceof Error
+          ? error.message
+          : "전체 랭킹을 불러오지 못했습니다.",
+      );
+    } finally {
+      setRankingsLoading(false);
     }
   };
 
@@ -958,6 +999,7 @@ export function Dashboard({
                 </div>
                 <button
                   className="flex items-center gap-1 text-[10px] font-bold text-[#748078]"
+                  onClick={() => void openRankings()}
                   type="button"
                 >
                   전체 <ChevronDown size={12} />
@@ -1009,6 +1051,7 @@ export function Dashboard({
               </div>
               <button
                 className="flex w-full items-center justify-center gap-1 border-t border-[#edf0eb] py-3.5 text-[11px] font-bold text-[#526159] hover:bg-[#fafbf8]"
+                onClick={() => void openRankings()}
                 type="button"
               >
                 전체 랭킹 보기 <ArrowRight size={12} />
@@ -1152,6 +1195,129 @@ export function Dashboard({
             <Check className="mt-0.5 shrink-0 text-[#c9ff3d]" size={15} />
             {toast}
           </div>
+        </div>
+      )}
+
+      {showRankings && (
+        <div
+          className="fixed inset-0 z-[70] grid place-items-end overflow-y-auto bg-[#0c211a]/55 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-10 backdrop-blur-sm sm:place-items-center sm:px-4 sm:py-6"
+          onMouseDown={(event) => {
+            if (event.currentTarget === event.target) setShowRankings(false);
+          }}
+        >
+          <section
+            aria-labelledby="rankings-title"
+            aria-modal="true"
+            className="flex max-h-[min(82dvh,720px)] w-full max-w-lg flex-col overflow-hidden rounded-[24px] bg-white shadow-2xl sm:rounded-[28px]"
+            role="dialog"
+          >
+            <header className="flex items-center justify-between border-b border-[#e8ece7] px-5 py-4">
+              <div className="flex items-center gap-2.5">
+                <span className="grid size-9 place-items-center rounded-xl bg-[#fff0ea] text-[#ff6137]">
+                  <Trophy size={18} />
+                </span>
+                <div>
+                  <h2
+                    className="display text-lg font-bold tracking-tight"
+                    id="rankings-title"
+                  >
+                    전체 랭킹
+                  </h2>
+                  <p className="text-[10px] text-[#859089]">
+                    DataGSM 사용자 · 보유 포인트 순
+                  </p>
+                </div>
+              </div>
+              <button
+                aria-label="전체 랭킹 닫기"
+                className="grid size-9 place-items-center rounded-full text-[#7e8982] transition hover:bg-[#f1f3ee]"
+                onClick={() => setShowRankings(false)}
+                type="button"
+              >
+                <X size={18} />
+              </button>
+            </header>
+
+            <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-2 sm:px-4">
+              {rankingsLoading && (
+                <div className="grid min-h-64 place-items-center text-[#758078]">
+                  <LoaderCircle className="animate-spin" size={24} />
+                </div>
+              )}
+
+              {rankingsError && !rankingsLoading && (
+                <div className="grid min-h-64 place-items-center px-5 text-center">
+                  <div>
+                    <p className="text-sm font-bold text-[#526159]">
+                      {rankingsError}
+                    </p>
+                    <button
+                      className="mt-4 rounded-xl bg-[#153f31] px-4 py-2.5 text-xs font-bold text-white"
+                      onClick={() => {
+                        setFullRankings(null);
+                        void openRankings();
+                      }}
+                      type="button"
+                    >
+                      다시 시도
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {!rankingsLoading &&
+                !rankingsError &&
+                fullRankings?.map((item) => (
+                  <div
+                    className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-2 rounded-xl px-2 py-3 hover:bg-[#f5f7f2] sm:px-3"
+                    key={item.rank}
+                  >
+                    <span
+                      className={`display text-center text-sm font-bold ${
+                        item.rank <= 3 ? "text-[#ff6137]" : "text-[#8b9690]"
+                      }`}
+                    >
+                      {item.rank}
+                    </span>
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#e5eee3] text-[10px] font-extrabold text-[#23533f]">
+                        {item.name.slice(0, 1)}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-bold">{item.name}</p>
+                        <p className="truncate text-[9px] text-[#909a94]">
+                          {item.detail} · 예측 {item.predictions}회
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="display whitespace-nowrap text-xs font-bold">
+                        {numberFormat.format(item.points)} P
+                      </p>
+                      <p className="text-[9px] font-semibold text-[#2c795a]">
+                        적중 {item.hitRate}%
+                      </p>
+                    </div>
+                  </div>
+                ))}
+
+              {!rankingsLoading &&
+                !rankingsError &&
+                fullRankings?.length === 0 && (
+                  <div className="grid min-h-64 place-items-center text-center">
+                    <div>
+                      <Trophy
+                        className="mx-auto mb-2 text-[#b5bdb8]"
+                        size={25}
+                      />
+                      <p className="text-sm font-bold text-[#66736c]">
+                        아직 랭킹이 없습니다.
+                      </p>
+                    </div>
+                  </div>
+                )}
+            </div>
+          </section>
         </div>
       )}
 
