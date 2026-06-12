@@ -747,7 +747,7 @@ export function Dashboard({
             <div className="flex items-center gap-2">
               <GoogleLoginLink
                 className="flex items-center gap-2 rounded-full border border-[#dadce0] bg-white px-4 py-2.5 text-xs font-bold text-[#3c4043] shadow-sm transition hover:bg-[#f7f8f6]"
-                label="Google"
+                label="Google 로그인"
               />
               <a
                 className="flex items-center gap-2 rounded-full bg-[#113e2f] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#082b20]"
