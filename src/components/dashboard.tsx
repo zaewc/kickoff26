@@ -30,6 +30,7 @@ import {
   FixtureDataMode,
 } from "@/lib/types";
 import { FloatingChat } from "@/components/floating-chat";
+import { AdSlot } from "@/components/ad-slot";
 import { syncMatchClock } from "@/lib/match-clock";
 
 type DashboardProps = {
@@ -70,6 +71,44 @@ const formatDateTab = (key: string) =>
   }).format(new Date(`${key}T12:00:00+09:00`));
 
 const numberFormat = new Intl.NumberFormat("ko-KR");
+
+function GoogleGlyph({ size = 15 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden>
+      <path
+        fill="#EA4335"
+        d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+      />
+      <path
+        fill="#4285F4"
+        d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+      />
+      <path
+        fill="#34A853"
+        d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+      />
+    </svg>
+  );
+}
+
+function GoogleLoginLink({
+  className,
+  label = "Google로 로그인",
+}: {
+  className: string;
+  label?: string;
+}) {
+  return (
+    <a className={className} href="/api/auth/google/login">
+      <GoogleGlyph />
+      {label}
+    </a>
+  );
+}
 
 function TeamMark({
   code,
@@ -705,13 +744,19 @@ export function Dashboard({
               </a>
             </div>
           ) : (
-            <a
-              className="flex items-center gap-2 rounded-full bg-[#113e2f] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#082b20]"
-              href="/api/auth/login"
-            >
-              <ShieldCheck size={15} />
-              DataGSM 로그인
-            </a>
+            <div className="flex items-center gap-2">
+              <GoogleLoginLink
+                className="flex items-center gap-2 rounded-full border border-[#dadce0] bg-white px-4 py-2.5 text-xs font-bold text-[#3c4043] shadow-sm transition hover:bg-[#f7f8f6]"
+                label="Google"
+              />
+              <a
+                className="flex items-center gap-2 rounded-full bg-[#113e2f] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#082b20]"
+                href="/api/auth/login"
+              >
+                <ShieldCheck size={15} />
+                DataGSM 로그인
+              </a>
+            </div>
           )}
         </div>
       </header>
@@ -724,7 +769,7 @@ export function Dashboard({
               <span>CANADA · MEXICO · USA</span>
             </div>
             <h1 className="display max-w-2xl text-[2.5rem] font-extrabold leading-[1.04] tracking-[-0.055em] md:text-[4.2rem]">
-              도박이 아닙니다.
+              도박이 아닙니다,
               <br />
               <span className="text-[#0b5941]">예측입니다.</span>
             </h1>
@@ -819,6 +864,11 @@ export function Dashboard({
                 </p>
               </div>
             )}
+
+            <AdSlot
+              slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_FEED}
+              className="mt-6"
+            />
           </section>
 
           <aside className="space-y-5" id="ranking">
@@ -887,6 +937,8 @@ export function Dashboard({
               </button>
             </section>
 
+            <AdSlot slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR} />
+
             <section
               className="noise overflow-hidden rounded-[22px] bg-[#d7ff69] p-5"
               id="my"
@@ -925,12 +977,15 @@ export function Dashboard({
                 </div>
               </div>
               {!user && (
-                <a
-                  className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-[#143e30] py-3 text-xs font-bold text-white"
-                  href="/api/auth/login"
-                >
-                  <ShieldCheck size={14} /> DataGSM으로 시작
-                </a>
+                <div className="mt-4 space-y-2">
+                  <a
+                    className="flex items-center justify-center gap-2 rounded-xl bg-[#143e30] py-3 text-xs font-bold text-white"
+                    href="/api/auth/login"
+                  >
+                    <ShieldCheck size={14} /> DataGSM으로 시작
+                  </a>
+                  <GoogleLoginLink className="flex items-center justify-center gap-2 rounded-xl border border-[#dadce0] bg-white py-3 text-xs font-bold text-[#3c4043]" />
+                </div>
               )}
             </section>
 
@@ -950,11 +1005,11 @@ export function Dashboard({
         <div className="mx-auto flex max-w-[1240px] flex-col items-center justify-between gap-3 px-5 text-[10px] text-[#8c9690] sm:flex-row md:px-7">
           <p>© 2026 KICKOFF 26. 비공식 월드컵 승부예측 서비스</p>
           <div className="flex items-center gap-4">
+            <a className="flex items-center gap-1 hover:text-[#4b5a51]" href="/privacy">
+              <ShieldCheck size={11} /> 개인정보처리방침
+            </a>
             <span className="flex items-center gap-1">
               <CalendarDays size={11} /> KST 기준
-            </span>
-            <span className="flex items-center gap-1">
-              <ShieldCheck size={11} /> DataGSM OAuth
             </span>
           </div>
         </div>
@@ -994,8 +1049,8 @@ export function Dashboard({
               예측을 기록할까요?
             </h2>
             <p className="mt-2 text-sm leading-6 text-[#758078]">
-              DataGSM 계정으로 로그인하면 예측 기록과 교내 랭킹을 안전하게
-              관리할 수 있습니다.
+              DataGSM 또는 Google 계정으로 로그인하면 예측 기록과 포인트를
+              안전하게 관리할 수 있습니다.
             </p>
             <a
               className="mt-6 flex items-center justify-center gap-2 rounded-2xl bg-[#123f30] py-3.5 text-sm font-bold text-white transition hover:bg-[#082d22]"
@@ -1004,6 +1059,14 @@ export function Dashboard({
               <ShieldCheck size={16} />
               DataGSM으로 계속하기
             </a>
+            <GoogleLoginLink className="mt-2 flex items-center justify-center gap-2 rounded-2xl border border-[#dadce0] bg-white py-3.5 text-sm font-bold text-[#3c4043] transition hover:bg-[#f7f8f6]" />
+            <p className="mt-3 text-center text-[10px] leading-4 text-[#9aa49d]">
+              계속하면{" "}
+              <a className="underline" href="/privacy">
+                개인정보처리방침
+              </a>
+              에 동의하는 것으로 간주됩니다.
+            </p>
             <button
               className="mt-2 w-full py-2 text-xs font-semibold text-[#849089]"
               onClick={() => setShowLoginPrompt(false)}
