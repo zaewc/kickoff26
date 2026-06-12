@@ -9,6 +9,7 @@ import {
   Target,
   XCircle,
 } from "lucide-react";
+import Link from "next/link";
 import { DatabaseSetup } from "@/components/database-setup";
 import { FloatingChat } from "@/components/floating-chat";
 import { SiteHeader } from "@/components/site-header";
@@ -282,12 +283,12 @@ export default async function MyPredictionsPage() {
             <p className="mt-2 text-xs text-[#89938d]">
               경기 스코어와 베팅 포인트를 입력해 첫 예측을 남겨보세요.
             </p>
-            <a
+            <Link
               className="mt-5 inline-flex rounded-xl bg-[#173f31] px-4 py-3 text-xs font-bold text-white"
               href="/"
             >
               경기 예측하러 가기
-            </a>
+            </Link>
           </section>
         )}
       </main>

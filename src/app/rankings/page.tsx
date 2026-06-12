@@ -1,4 +1,5 @@
 import { Medal, Target, Trophy, Users } from "lucide-react";
+import Link from "next/link";
 import { DatabaseSetup } from "@/components/database-setup";
 import { FloatingChat } from "@/components/floating-chat";
 import { SiteHeader } from "@/components/site-header";
@@ -124,12 +125,12 @@ export default async function RankingsPage() {
               <p className="mt-2 text-xs text-[#89938d]">
                 예측을 등록하면 이곳에서 순위를 확인할 수 있습니다.
               </p>
-              <a
+              <Link
                 className="mt-5 inline-flex rounded-xl bg-[#173f31] px-4 py-3 text-xs font-bold text-white"
                 href="/"
               >
                 경기 예측하러 가기
-              </a>
+              </Link>
             </div>
           )}
         </section>

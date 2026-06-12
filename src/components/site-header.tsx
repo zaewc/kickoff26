@@ -4,6 +4,7 @@ import {
   ShieldCheck,
   Trophy,
 } from "lucide-react";
+import Link from "next/link";
 import { SessionUser } from "@/lib/types";
 
 type SiteHeaderProps = {
@@ -44,7 +45,7 @@ export function SiteHeader({ currentPath, user }: SiteHeaderProps) {
   return (
     <header className="sticky top-0 z-40 border-b border-[#dde3dc]/80 bg-[#f4f5f0]/90 backdrop-blur-xl">
       <div className="mx-auto flex min-h-16 max-w-[1240px] items-center justify-between gap-2 px-3 py-2 sm:px-4 md:px-7">
-        <a
+        <Link
           className="flex min-w-0 shrink items-center gap-2 sm:gap-2.5"
           href="/"
         >
@@ -54,11 +55,11 @@ export function SiteHeader({ currentPath, user }: SiteHeaderProps) {
           <span className="display whitespace-nowrap text-base font-extrabold tracking-[-0.04em] sm:text-lg">
             KICKOFF <span className="text-[#ff6137]">26</span>
           </span>
-        </a>
+        </Link>
 
         <nav className="hidden items-center gap-7 text-sm font-semibold text-[#6e7973] md:flex">
           {navigation.map((item) => (
-            <a
+            <Link
               className={
                 currentPath === item.href
                   ? "text-[#143d30]"
@@ -68,7 +69,7 @@ export function SiteHeader({ currentPath, user }: SiteHeaderProps) {
               key={item.href}
             >
               {item.label}
-            </a>
+            </Link>
           ))}
         </nav>
 
@@ -112,7 +113,7 @@ export function SiteHeader({ currentPath, user }: SiteHeaderProps) {
 
       <nav className="mx-auto grid max-w-[1240px] grid-cols-3 border-t border-[#e5e9e4] px-3 md:hidden">
         {navigation.map((item) => (
-          <a
+          <Link
             className={`relative py-2.5 text-center text-xs font-bold ${
               currentPath === item.href ? "text-[#123f30]" : "text-[#89938d]"
             }`}
@@ -123,7 +124,7 @@ export function SiteHeader({ currentPath, user }: SiteHeaderProps) {
             {currentPath === item.href && (
               <span className="absolute inset-x-5 bottom-0 h-0.5 rounded-full bg-[#123f30]" />
             )}
-          </a>
+          </Link>
         ))}
       </nav>
     </header>
