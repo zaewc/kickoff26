@@ -197,6 +197,8 @@ function MatchCard({
   saving: boolean;
 }) {
   const isLive = match.status === "LIVE";
+  const isFinished = match.status === "FINISHED";
+  const showScore = isLive || isFinished;
   const canPredict = match.status === "UPCOMING";
 
   return (
@@ -212,10 +214,14 @@ function MatchCard({
               <span className="live-dot size-2 rounded-full bg-[#ff5c41]" />
               <span className="text-[#e94d35]">LIVE · {match.elapsed}&apos;</span>
             </>
+          ) : isFinished ? (
+            <span className="rounded-full bg-[#e7ebe6] px-2 py-0.5 text-[10px] font-bold text-[#5a665e]">
+              종료
+            </span>
           ) : (
             <Clock3 size={13} />
           )}
-          <span>{isLive ? match.stage : formatKickoff(match.kickoff)}</span>
+          <span>{showScore ? match.stage : formatKickoff(match.kickoff)}</span>
         </div>
         <span className="rounded-full bg-[#f0f3ed] px-2.5 py-1 text-[10px] font-bold text-[#506057]">
           {match.group}
@@ -229,11 +235,29 @@ function MatchCard({
             <span className="line-clamp-1 text-sm font-bold">{match.home.name}</span>
           </div>
 
-          {isLive ? (
+          {showScore ? (
             <div className="display flex items-center gap-2 text-4xl font-bold tracking-tight">
-              <span>{match.homeScore}</span>
+              <span
+                className={
+                  isFinished &&
+                  (match.homeScore ?? 0) < (match.awayScore ?? 0)
+                    ? "text-[#b3bbb5]"
+                    : ""
+                }
+              >
+                {match.homeScore}
+              </span>
               <span className="text-lg text-[#a6aea9]">:</span>
-              <span>{match.awayScore}</span>
+              <span
+                className={
+                  isFinished &&
+                  (match.awayScore ?? 0) < (match.homeScore ?? 0)
+                    ? "text-[#b3bbb5]"
+                    : ""
+                }
+              >
+                {match.awayScore}
+              </span>
             </div>
           ) : (
             <div className="display rounded-full bg-[#f1f3ee] px-3 py-1.5 text-xs font-bold text-[#738078]">
