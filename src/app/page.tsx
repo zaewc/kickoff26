@@ -33,7 +33,7 @@ export default async function Home() {
       getStoredMatches(),
       getFixtureDataMode(),
       getPredictionsForUser(session),
-      getLeaderboard(10),
+      getLeaderboard(5),
       getUserStats(session),
     ]);
 
