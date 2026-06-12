@@ -37,7 +37,7 @@ const mergeMessages = (current: ChatMessage[], incoming: ChatMessage[]) => {
 };
 
 export function FloatingChat({ user }: FloatingChatProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(true);

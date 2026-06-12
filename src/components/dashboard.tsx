@@ -52,6 +52,23 @@ const formatKickoff = (value: string) =>
     timeZone: "Asia/Seoul",
   }).format(new Date(value));
 
+// KST 기준 날짜 키 ("YYYY-MM-DD") — 날짜별 탭 그룹핑/선택에 사용
+const kstDateKey = (value: string) =>
+  new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: "Asia/Seoul",
+  }).format(new Date(value));
+
+const formatDateTab = (key: string) =>
+  new Intl.DateTimeFormat("ko-KR", {
+    month: "numeric",
+    day: "numeric",
+    weekday: "short",
+    timeZone: "Asia/Seoul",
+  }).format(new Date(`${key}T12:00:00+09:00`));
+
 const numberFormat = new Intl.NumberFormat("ko-KR");
 
 function TeamMark({
@@ -476,7 +493,7 @@ export function Dashboard({
     ),
   );
   const [userStats, setUserStats] = useState(initialUserStats);
-  const [filter, setFilter] = useState<"all" | "live" | "upcoming">("all");
+  const [selectedDate, setSelectedDate] = useState<string>("");
   const [toast, setToast] = useState<string | null>(null);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [savingMatchId, setSavingMatchId] = useState<number | null>(null);
@@ -502,18 +519,40 @@ export function Dashboard({
   const defaultPrediction = (id: number): Prediction =>
     predictions[id] ?? { home: 0, away: 0, wager: 100, updatedAt: "" };
 
-  const visibleMatches = useMemo(() => {
-    const withoutFeatured = matches.filter(
-      (match) => match.id !== liveMatch?.id,
+  // 경기가 있는 날짜(KST) 목록 — 오름차순
+  const matchDates = useMemo(() => {
+    const keys = Array.from(
+      new Set(matches.map((match) => kstDateKey(match.kickoff))),
     );
-    if (filter === "live") {
-      return withoutFeatured.filter((match) => match.status === "LIVE");
-    }
-    if (filter === "upcoming") {
-      return withoutFeatured.filter((match) => match.status === "UPCOMING");
-    }
-    return withoutFeatured.slice(0, 6);
-  }, [filter, matches, liveMatch?.id]);
+    keys.sort();
+    return keys;
+  }, [matches]);
+
+  // 기본 선택 날짜(props 기반, SSR 안전): 진행 중 경기 날짜 → 가장 가까운 예정 → 첫 날짜
+  const defaultDate = useMemo(() => {
+    if (!matchDates.length) return "";
+    const upcoming = matches.find((match) => match.status === "UPCOMING");
+    return (
+      (liveMatch && kstDateKey(liveMatch.kickoff)) ||
+      (upcoming && kstDateKey(upcoming.kickoff)) ||
+      matchDates[0]
+    );
+  }, [matchDates, matches, liveMatch]);
+
+  const activeDate =
+    selectedDate && matchDates.includes(selectedDate)
+      ? selectedDate
+      : defaultDate;
+
+  const visibleMatches = useMemo(
+    () =>
+      matches.filter(
+        (match) =>
+          match.id !== liveMatch?.id &&
+          kstDateKey(match.kickoff) === activeDate,
+      ),
+    [matches, liveMatch?.id, activeDate],
+  );
 
   const updatePrediction = (id: number, prediction: Prediction) => {
     setPredictions((current) => ({ ...current, [id]: prediction }));
@@ -702,37 +741,35 @@ export function Dashboard({
 
         <div className="mt-9 grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
           <section id="matches">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="display text-2xl font-bold tracking-[-0.03em]">
-                  오늘의 경기
-                </h2>
-                <p className="mt-1 text-xs text-[#7f8a84]">
-                  모든 시간은 한국 표준시(KST) 기준입니다.
-                </p>
+            <div className="mb-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="display text-2xl font-bold tracking-[-0.03em]">
+                    경기 일정
+                  </h2>
+                  <p className="mt-1 text-xs text-[#7f8a84]">
+                    모든 시간은 한국 표준시(KST) 기준입니다.
+                  </p>
+                </div>
               </div>
-              <div className="flex rounded-full border border-[#dfe4de] bg-white p-1 text-xs font-bold">
-                {[
-                  ["all", "전체"],
-                  ["live", "LIVE"],
-                  ["upcoming", "예정"],
-                ].map(([value, label]) => (
-                  <button
-                    className={`rounded-full px-3.5 py-2 transition ${
-                      filter === value
-                        ? "bg-[#153f31] text-white"
-                        : "text-[#7a8580] hover:text-[#153f31]"
-                    }`}
-                    key={value}
-                    onClick={() =>
-                      setFilter(value as "all" | "live" | "upcoming")
-                    }
-                    type="button"
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
+              {matchDates.length > 0 && (
+                <div className="-mx-1 mt-3 flex gap-1.5 overflow-x-auto px-1 pb-1">
+                  {matchDates.map((date) => (
+                    <button
+                      className={`shrink-0 whitespace-nowrap rounded-full border px-3.5 py-2 text-xs font-bold transition ${
+                        activeDate === date
+                          ? "border-[#153f31] bg-[#153f31] text-white"
+                          : "border-[#dfe4de] bg-white text-[#7a8580] hover:text-[#153f31]"
+                      }`}
+                      key={date}
+                      onClick={() => setSelectedDate(date)}
+                      type="button"
+                    >
+                      {formatDateTab(date)}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {visibleMatches.length ? (
@@ -754,7 +791,7 @@ export function Dashboard({
               <div className="rounded-3xl border border-dashed border-[#d4dbd4] py-16 text-center">
                 <Radio className="mx-auto mb-3 text-[#9ca69f]" size={28} />
                 <p className="text-sm font-bold text-[#536159]">
-                  현재 진행 중인 경기가 없습니다.
+                  이 날짜에 표시할 경기가 없습니다.
                 </p>
               </div>
             )}
@@ -765,7 +802,7 @@ export function Dashboard({
               <div className="flex items-center justify-between border-b border-[#edf0eb] px-5 py-4">
                 <div className="flex items-center gap-2">
                   <Flame className="text-[#ff6137]" size={18} />
-                  <h2 className="display font-bold">교내 랭킹</h2>
+                  <h2 className="display font-bold">랭킹</h2>
                 </div>
                 <button
                   className="flex items-center gap-1 text-[10px] font-bold text-[#748078]"
