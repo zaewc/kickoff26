@@ -128,10 +128,7 @@ export async function getPredictionListForUser(
 }
 
 export async function getLeaderboard(limit = 10): Promise<RankingEntry[]> {
-  // 교내 랭킹은 DataGSM(학년/반 보유) 사용자만. Google 등 일반 사용자는
-  // 포인트·예측엔 참여하지만 교내 랭킹에는 노출하지 않는다.
   const users = await db.user.findMany({
-    where: { provider: "datagsm" },
     include: {
       predictions: {
         select: { points: true, outcomeCorrect: true, scoredAt: true },
@@ -152,7 +149,9 @@ export async function getLeaderboard(limit = 10): Promise<RankingEntry[]> {
         detail:
           user.grade && user.classNumber
             ? `${user.grade}학년 ${user.classNumber}반`
-            : "DataGSM 사용자",
+            : user.provider === "google"
+              ? "Google 사용자"
+              : "DataGSM 사용자",
         points: user.pointBalance,
         predictions: user.predictions.length,
         hitRate: scored.length
@@ -160,7 +159,6 @@ export async function getLeaderboard(limit = 10): Promise<RankingEntry[]> {
           : 0,
       };
     })
-    .filter((entry) => entry.predictions > 0)
     .sort(
       (a, b) =>
         b.points - a.points ||

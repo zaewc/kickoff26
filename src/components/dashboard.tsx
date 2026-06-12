@@ -959,10 +959,10 @@ export function Dashboard({
                   <div className="px-4 py-10 text-center">
                     <Trophy className="mx-auto mb-2 text-[#b5bdb8]" size={22} />
                     <p className="text-xs font-bold text-[#66736c]">
-                      아직 채점된 예측이 없습니다.
+                      아직 가입한 사용자가 없습니다.
                     </p>
                     <p className="mt-1 text-[10px] text-[#98a19c]">
-                      첫 경기 종료 후 랭킹이 열립니다.
+                      로그인하면 기본 포인트와 함께 랭킹에 등록됩니다.
                     </p>
                   </div>
                 )}

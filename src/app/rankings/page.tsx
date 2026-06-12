@@ -44,8 +44,8 @@ export default async function RankingsPage() {
                 전체 랭킹
               </h1>
               <p className="mt-3 max-w-xl text-sm leading-6 text-white/65">
-                DataGSM으로 참여한 사용자들의 포인트와 승무패 적중률을
-                확인하세요.
+                DataGSM과 Google로 참여한 모든 사용자의 포인트와 승무패
+                적중률을 확인하세요.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-2 sm:min-w-64">
@@ -120,10 +120,10 @@ export default async function RankingsPage() {
                 <Target size={22} />
               </span>
               <h2 className="mt-4 text-sm font-bold">
-                아직 랭킹에 등록된 사용자가 없습니다
+                아직 가입한 사용자가 없습니다
               </h2>
               <p className="mt-2 text-xs text-[#89938d]">
-                예측을 등록하면 이곳에서 순위를 확인할 수 있습니다.
+                로그인하면 기본 포인트와 함께 랭킹에 등록됩니다.
               </p>
               <Link
                 className="mt-5 inline-flex rounded-xl bg-[#173f31] px-4 py-3 text-xs font-bold text-white"
