@@ -607,11 +607,6 @@ export function Dashboard({
             <div className="flex items-center gap-2">
               <div className="hidden text-right sm:block">
                 <p className="text-xs font-bold">{user.name}</p>
-                <p className="text-[10px] text-[#85908a]">
-                  {user.grade && user.classNumber
-                    ? `${user.grade}학년 ${user.classNumber}반`
-                    : "DataGSM 인증"}
-                </p>
               </div>
               <span className="grid size-9 place-items-center rounded-full bg-[#dcebdd] text-[#174b37]">
                 <CircleUserRound size={19} />
