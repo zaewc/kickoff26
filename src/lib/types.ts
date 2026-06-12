@@ -31,8 +31,10 @@ export type Match = {
 
 export type SessionUser = {
   id: string;
+  provider?: "datagsm" | "google";
   name: string;
   email?: string;
+  avatar?: string;
   grade?: number;
   classNumber?: number;
   number?: number;

@@ -6,6 +6,7 @@ export async function upsertUser(profile: SessionUser) {
     where: { datagsmId: profile.id },
     create: {
       datagsmId: profile.id,
+      provider: profile.provider ?? "datagsm",
       email: profile.email,
       name: profile.name,
       grade: profile.grade,
@@ -13,6 +14,7 @@ export async function upsertUser(profile: SessionUser) {
       studentNumber: profile.number,
     },
     update: {
+      provider: profile.provider ?? "datagsm",
       email: profile.email,
       name: profile.name,
       grade: profile.grade,
