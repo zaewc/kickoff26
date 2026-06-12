@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  BASE_URL: https://kickoff26-self.vercel.app
+  BASE_URL: https://kickoff.zaewc.site
 
 jobs:
   results:
