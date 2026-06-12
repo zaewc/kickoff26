@@ -826,9 +826,27 @@ export function Dashboard({
               <br />
               <span className="text-[#0b5941]">예측입니다.</span>
             </h1>
-            <p className="mt-4 max-w-xl text-sm leading-6 text-[#758078] md:text-base">
-              2026 월드컵의 모든 경기를 예측하고 상품을 받아가세요.
-            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <p className="max-w-xl text-sm leading-6 text-[#758078] md:text-base">
+                친구에게 공유하고, 친구가 가입하면 초대할 때마다 10P를
+                받아보세요.
+              </p>
+              <button
+                className="inline-flex items-center gap-2 rounded-full bg-[#153f31] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#0b2e23] disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={Boolean(user && !referralSummary) || sharing}
+                onClick={() => {
+                  if (!user) {
+                    setShowLoginPrompt(true);
+                    return;
+                  }
+                  void shareReferral();
+                }}
+                type="button"
+              >
+                <Share2 size={14} />
+                {sharing ? "공유 중..." : "친구에게 공유"}
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-3 gap-2 rounded-2xl border border-[#dfe4de] bg-white p-2 shadow-sm">
