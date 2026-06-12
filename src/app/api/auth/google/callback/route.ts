@@ -3,50 +3,49 @@ import { sessionCookie, signSession } from "@/lib/auth";
 import { SessionUser } from "@/lib/types";
 import { upsertUser } from "@/lib/users";
 
-const TOKEN_URL = "https://oauth.authorization.datagsm.kr/v1/oauth/token";
-const USERINFO_URL = "https://oauth.resource.datagsm.kr/userinfo";
+const TOKEN_URL = "https://oauth2.googleapis.com/token";
+const USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
 
-type DataGsmProfile = {
+type GoogleProfile = {
   sub?: string;
-  id?: string | number;
   name?: string;
+  given_name?: string;
   email?: string;
-  student?: {
-    name?: string;
-    grade?: number;
-    classNumber?: number;
-    class_num?: number;
-    number?: number;
-  };
-  grade?: number;
-  classNumber?: number;
-  class_num?: number;
-  number?: number;
+  picture?: string;
 };
 
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
-  const savedState = request.cookies.get("oauth_state")?.value;
-  const verifier = request.cookies.get("oauth_verifier")?.value;
-  const clientId = process.env.DATAGSM_CLIENT_ID;
+  const savedState = request.cookies.get("google_oauth_state")?.value;
+  const verifier = request.cookies.get("google_oauth_verifier")?.value;
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   const redirectUri =
-    process.env.DATAGSM_REDIRECT_URI ||
-    new URL("/api/auth/callback", request.url).toString();
+    process.env.GOOGLE_REDIRECT_URI ||
+    new URL("/api/auth/google/callback", request.url).toString();
 
-  if (!code || !state || state !== savedState || !verifier || !clientId) {
+  if (
+    !code ||
+    !state ||
+    state !== savedState ||
+    !verifier ||
+    !clientId ||
+    !clientSecret
+  ) {
     return NextResponse.redirect(new URL("/?auth=invalid", request.url));
   }
 
   try {
     const tokenResponse = await fetch(TOKEN_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
         grant_type: "authorization_code",
         code,
         client_id: clientId,
+        client_secret: clientSecret,
         redirect_uri: redirectUri,
         code_verifier: verifier,
       }),
@@ -67,20 +66,17 @@ export async function GET(request: NextRequest) {
       throw new Error(`Userinfo request failed: ${profileResponse.status}`);
     }
 
-    const profile = (await profileResponse.json()) as DataGsmProfile;
-    const student = profile.student;
+    const profile = (await profileResponse.json()) as GoogleProfile;
+    if (!profile.sub) {
+      throw new Error("Google userinfo missing sub");
+    }
+
     const user: SessionUser = {
-      id: String(profile.sub ?? profile.id ?? profile.email ?? "datagsm-user"),
-      provider: "datagsm",
-      name: profile.name ?? student?.name ?? "DataGSM 사용자",
+      id: `google:${profile.sub}`,
+      provider: "google",
+      name: profile.name ?? profile.given_name ?? profile.email ?? "Google 사용자",
       email: profile.email,
-      grade: profile.grade ?? student?.grade,
-      classNumber:
-        profile.classNumber ??
-        profile.class_num ??
-        student?.classNumber ??
-        student?.class_num,
-      number: profile.number ?? student?.number,
+      avatar: profile.picture,
     };
     await upsertUser(user);
 
@@ -90,11 +86,11 @@ export async function GET(request: NextRequest) {
       signSession(user),
       sessionCookie.options,
     );
-    response.cookies.delete("oauth_state");
-    response.cookies.delete("oauth_verifier");
+    response.cookies.delete("google_oauth_state");
+    response.cookies.delete("google_oauth_verifier");
     return response;
   } catch (error) {
-    console.error("DataGSM OAuth callback failed:", error);
+    console.error("Google OAuth callback failed:", error);
     return NextResponse.redirect(new URL("/?auth=failed", request.url));
   }
 }
