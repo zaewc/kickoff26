@@ -63,7 +63,10 @@ export async function getUserStats(
 }
 
 export async function getLeaderboard(limit = 10): Promise<RankingEntry[]> {
+  // 교내 랭킹은 DataGSM(학년/반 보유) 사용자만. Google 등 일반 사용자는
+  // 포인트·예측엔 참여하지만 교내 랭킹에는 노출하지 않는다.
   const users = await db.user.findMany({
+    where: { provider: "datagsm" },
     include: {
       predictions: {
         select: { points: true, outcomeCorrect: true, scoredAt: true },
