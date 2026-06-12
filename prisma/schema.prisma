@@ -22,6 +22,7 @@ model User {
   predictions   Prediction[]
   revisions     PredictionRevision[]
   pointTransactions PointTransaction[]
+  chatMessages  ChatMessage[]
 
   @@index([grade, classNumber])
 }
@@ -107,4 +108,15 @@ model PointTransaction {
   @@index([userId, createdAt])
   @@index([fixtureId])
   @@index([predictionId])
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
 }

@@ -62,3 +62,15 @@ export type UserStats = {
   points: number;
   balance: number;
 };
+
+export type ChatMessage = {
+  id: string;
+  content: string;
+  createdAt: string;
+  isMine: boolean;
+  user: {
+    name: string;
+    grade?: number;
+    classNumber?: number;
+  };
+};
